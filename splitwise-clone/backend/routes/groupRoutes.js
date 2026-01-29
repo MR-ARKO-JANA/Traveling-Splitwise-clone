@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 const Group = require("../models/Group");
 const User = require("../models/User");
+const Expense = require("../models/Expense");
 
 router.post("/", auth, async (req, res) => {
     try {
@@ -63,20 +64,47 @@ router.post("/add-member", auth, async (req, res) => {
         
         if (!group) return res.status(404).json({ message: "Group not found" });
 
-       
         const userToAdd = await User.findOne({ email });
         if (!userToAdd) return res.status(404).json({ message: "User not found" });
 
-        
-        if (group.members.includes(userToAdd._id)) {
+        // Check if user email is already in group (groups store emails, not IDs)
+        if (group.members.includes(userToAdd.email)) {
             return res.status(400).json({ message: "User already in group" });
         }
 
-        group.members.push(userToAdd._id);
+        group.members.push(userToAdd.email);
         await group.save();
         res.json({ message: "Member added successfully", group });
     } catch (err) {
-        res.status(500).send("Server Error");
+        console.error("Add member error:", err);
+        res.status(500).json({ message: "Server Error: " + err.message });
+    }
+});
+
+// Test endpoint to check if group exists
+router.get("/:groupId/test", auth, async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const group = await Group.findById(groupId);
+        const user = await User.findById(req.user.id);
+        
+        res.json({
+            groupExists: !!group,
+            userExists: !!user,
+            groupId,
+            userId: req.user.id,
+            group: group ? {
+                name: group.name,
+                createdBy: group.createdBy,
+                members: group.members
+            } : null,
+            user: user ? {
+                name: user.name,
+                email: user.email
+            } : null
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -84,6 +112,12 @@ router.post("/add-member", auth, async (req, res) => {
 router.delete("/:groupId", auth, async (req, res) => {
     try {
         const { groupId } = req.params;
+        
+        // Validate groupId format
+        if (!groupId || !groupId.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({ message: "Invalid group ID format" });
+        }
+        
         const group = await Group.findById(groupId);
         
         if (!group) {
@@ -92,6 +126,7 @@ router.delete("/:groupId", auth, async (req, res) => {
 
         // Check if user is the creator or a member
         const user = await User.findById(req.user.id);
+        
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
@@ -105,16 +140,28 @@ router.delete("/:groupId", auth, async (req, res) => {
         }
 
         // Delete all expenses related to this group first
-        const Expense = require("../models/Expense");
-        await Expense.deleteMany({ group: groupId });
+        const deleteResult = await Expense.deleteMany({ group: groupId });
         
         // Delete the group
         await Group.findByIdAndDelete(groupId);
         
-        res.json({ message: "Group and related expenses deleted successfully" });
+        res.json({ 
+            message: "Group and related expenses deleted successfully",
+            deletedExpenses: deleteResult.deletedCount
+        });
     } catch (err) {
         console.error("Delete group error:", err);
-        res.status(500).json({ message: "Server Error: " + err.message });
+        
+        // Handle specific MongoDB errors
+        if (err.name === 'CastError') {
+            return res.status(400).json({ message: "Invalid group ID" });
+        }
+        
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({ message: "Validation error: " + err.message });
+        }
+        
+        res.status(500).json({ message: "Failed to delete group. Please try again." });
     }
 });
 

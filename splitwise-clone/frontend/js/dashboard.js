@@ -314,7 +314,7 @@ window.deleteGroup = async (e, groupId, groupName) => {
             method: "DELETE",
             headers
         });
-
+        
         if (res.ok) {
             const data = await res.json();
             showNotification(`Group "${groupName}" deleted successfully!`, "success");
@@ -330,7 +330,7 @@ window.deleteGroup = async (e, groupId, groupName) => {
             await refreshDashboard();
             addToActivity(`Deleted group: ${groupName}`, "group");
         } else {
-            const errorData = await res.json().catch(() => ({ message: "Unknown error occurred" }));
+            const errorData = await res.json().catch(() => ({ message: "Failed to delete group" }));
             showNotification(errorData.message || "Failed to delete group", "error");
         }
     } catch (err) {
