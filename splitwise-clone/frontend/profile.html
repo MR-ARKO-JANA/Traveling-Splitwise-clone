@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Profile - Splitwise</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Poppins,sans-serif;
+}
+
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at top left,#667eea,#764ba2,#43cea2);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow:hidden;
+  position: relative;
+}
+
+/* Floating glow */
+body::before{
+  content:"";
+  position:absolute;
+  inset:-40%;
+  background:conic-gradient(from 180deg,#667eea,#764ba2,#43cea2,#667eea);
+  animation:spin 18s linear infinite;
+  opacity:0.25;
+}
+
+@keyframes spin{
+  to{transform:rotate(360deg);}
+}
+
+/* Back button */
+.back-btn {
+  position: fixed;
+  top: 30px;
+  left: 30px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Passport Card */
+.passport{
+  position:relative;
+  width:500px;
+  max-width: 90vw;
+  background:rgba(255,255,255,0.15);
+  backdrop-filter:blur(18px);
+  border-radius:28px;
+  padding:35px;
+  box-shadow:0 40px 90px rgba(0,0,0,0.4);
+  z-index:1;
+  animation:floatIn 1s ease;
+}
+
+@keyframes floatIn{
+  from{opacity:0;transform:translateY(60px) scale(0.8);}
+  to{opacity:1;transform:none;}
+}
+
+/* Header */
+.passport-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:25px;
+}
+
+.passport-header h2{
+  color:#fff;
+  letter-spacing:2px;
+  font-size: 24px;
+}
+
+.passport-header span{
+  font-size:12px;
+  opacity:0.8;
+  color:#fff;
+  background: rgba(255,255,255,0.1);
+  padding: 5px 12px;
+  border-radius: 15px;
+}
+
+.profile {
+  display: flex;
+  gap: 25px;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.avatar {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.avatar.drag-over {
+  border-color: #00e676;
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(0, 230, 118, 0.5);
+}
+
+.dp-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.dp-img:hover {
+  transform: scale(1.05);
+}
+
+.camera-overlay {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  width: 35px;
+  height: 35px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  border: 2px solid white;
+}
+
+.camera-overlay:hover {
+  transform: scale(1.1);
+  background: linear-gradient(135deg, #764ba2, #667eea);
+}
+
+.camera-overlay i {
+  color: white;
+  font-size: 14px;
+}
+
+.avatar::after{
+  content:"";
+  position:absolute;
+  inset:-6px;
+  border-radius:50%;
+  border:2px dashed #fff;
+  animation:ring 6s linear infinite;
+}
+
+@keyframes ring{
+  to{transform:rotate(360deg);}
+}
+
+.user-info h3{
+  color:#fff;
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.user-info p{
+  color:#eee;
+  font-size:15px;
+  margin-bottom: 5px;
+}
+
+.user-info .join-date {
+  color: rgba(255,255,255,0.7);
+  font-size: 12px;
+}
+
+/* Stats */
+.stats{
+  margin-bottom: 25px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:15px;
+}
+
+.stat{
+  background:rgba(255,255,255,0.2);
+  border-radius:16px;
+  padding:18px;
+  text-align:center;
+  color:#fff;
+  transition:0.3s;
+}
+
+.stat:hover{
+  transform:translateY(-6px) scale(1.05);
+  background:rgba(255,255,255,0.25);
+}
+
+.stat h4{
+  font-size:24px;
+  margin-bottom: 5px;
+}
+
+.stat span{
+  font-size:12px;
+  opacity:0.8;
+}
+
+.stat i {
+  font-size: 20px;
+  margin-bottom: 10px;
+  opacity: 0.8;
+}
+
+/* Balance */
+.balance{
+  margin-bottom: 25px;
+  padding:20px;
+  border-radius:18px;
+  background:linear-gradient(135deg,#00e676,#43cea2);
+  color:#003;
+  text-align:center;
+  font-weight:700;
+  box-shadow:0 15px 35px rgba(0,230,118,0.6);
+  font-size: 18px;
+}
+
+/* Actions */
+.actions{
+  display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.actions button{
+  padding:14px 20px;
+  border:none;
+  border-radius:30px;
+  cursor:pointer;
+  font-weight:600;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  color:#fff;
+  transition:0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.actions button:hover{
+  transform:scale(1.05);
+  box-shadow:0 12px 30px rgba(118,75,162,0.6);
+}
+
+.actions button.secondary {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Recent Activity */
+.recent-activity {
+  background: rgba(255,255,255,0.1);
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.recent-activity h3 {
+  color: #fff;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.activity-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.activity-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+}
+
+.activity-details {
+  flex: 1;
+}
+
+.activity-details p {
+  color: #fff;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+
+.activity-details small {
+  color: rgba(255,255,255,0.6);
+  font-size: 11px;
+}
+
+/* Settings Panel */
+.settings-panel {
+  background: rgba(255,255,255,0.1);
+  border-radius: 18px;
+  padding: 20px;
+}
+
+.settings-panel h3 {
+  color: #fff;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-item label {
+  color: rgba(255,255,255,0.9);
+  font-size: 14px;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 50px;
+  height: 25px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.toggle-switch.active {
+  background: #00e676;
+}
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 21px;
+  height: 21px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.toggle-switch.active::after {
+  transform: translateX(25px);
+}
+
+/* Modal styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 10000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(20px);
+  margin: 15% auto;
+  padding: 30px;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 500px;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.close {
+  color: rgba(255,255,255,0.7);
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close:hover {
+  color: white;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 14px;
+}
+
+.form-group input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.form-group input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #667eea;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.btn {
+  flex: 1;
+  padding: 12px 24px;
+  border-radius: 25px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .passport {
+    width: 95vw;
+    padding: 25px;
+  }
+  
+  .profile {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+  
+  .avatar {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .stats {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .actions {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+<button class="back-btn" onclick="window.history.back()">
+    <i class="fas fa-arrow-left"></i> Back
+</button>
+
+<div class="passport">
+  <div class="passport-header">
+    <h2>USER PROFILE</h2>
+    <span id="userId">ID #UID-90821</span>
+  </div>
+
+  <div class="profile">
+    <div class="avatar">
+      <img class="dp-img" src="https://via.placeholder.com/120x120/667eea/ffffff?text=👤" 
+           id="profileDisplay" 
+           onclick="triggerClick()" 
+           title="Click to change profile picture"
+           onerror="this.src='https://via.placeholder.com/120x120/667eea/ffffff?text=👤'">
+      
+      <input type="file" id="profileImage" onchange="displayImage(this)" style="display: none;" accept="image/jpeg,image/jpg,image/png,image/gif">
+      
+      <!-- Camera icon overlay -->
+      <div class="camera-overlay" onclick="triggerClick()">
+        <i class="fas fa-camera"></i>
+      </div>
+    </div>
+
+    <div class="user-info">
+      <h3 id="userName">Loading...</h3>
+      <p id="userEmail">Loading...</p>
+      <p class="join-date" id="joinDate">Member since: Loading...</p>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <i class="fas fa-users"></i>
+      <h4 id="groupCount">0</h4>
+      <span>Groups</span>
+    </div>
+    <div class="stat">
+      <i class="fas fa-receipt"></i>
+      <h4 id="expenseCount">0</h4>
+      <span>Expenses</span>
+    </div>
+    <div class="stat">
+      <i class="fas fa-handshake"></i>
+      <h4 id="settlementCount">0</h4>
+      <span>Settlements</span>
+    </div>
+  </div>
+
+  <div class="balance" id="netBalanceCard">
+    NET BALANCE: ₹0.00
+  </div>
+
+  <div class="actions">
+    <button onclick="showEditProfileModal()">
+      <i class="fas fa-edit"></i> Edit Profile
+    </button>
+    <button onclick="showChangePasswordModal()">
+      <i class="fas fa-key"></i> Change Password
+    </button>
+    <button class="secondary" onclick="window.location.href='balances.html'">
+      <i class="fas fa-balance-scale"></i> View Balances
+    </button>
+    <button class="secondary" onclick="exportUserData()">
+      <i class="fas fa-download"></i> Export Data
+    </button>
+  </div>
+
+  <div class="recent-activity">
+    <h3><i class="fas fa-clock"></i> Recent Activity</h3>
+    <div class="activity-list" id="activityList">
+      <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p style="margin-top: 10px;">Loading activity...</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-panel">
+    <h3><i class="fas fa-cog"></i> Settings</h3>
+    <div class="setting-item">
+      <label>Email Notifications</label>
+      <div class="toggle-switch active" onclick="toggleSetting(this)"></div>
+    </div>
+    <div class="setting-item">
+      <label>Push Notifications</label>
+      <div class="toggle-switch" onclick="toggleSetting(this)"></div>
+    </div>
+    <div class="setting-item">
+      <label>Dark Mode</label>
+      <div class="toggle-switch active" onclick="toggleSetting(this)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div id="editProfileModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-edit"></i> Edit Profile</h2>
+      <span class="close" onclick="hideModal('editProfileModal')">&times;</span>
+    </div>
+    
+    <div class="form-group">
+      <label for="editName">Name</label>
+      <input type="text" id="editName" placeholder="Your name">
+    </div>
+    
+    <div class="form-group">
+      <label for="editEmail">Email</label>
+      <input type="email" id="editEmail" placeholder="Your email">
+    </div>
+    
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" onclick="hideModal('editProfileModal')">Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="updateProfile()">
+        <i class="fas fa-save"></i> Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div id="changePasswordModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-key"></i> Change Password</h2>
+      <span class="close" onclick="hideModal('changePasswordModal')">&times;</span>
+    </div>
+    
+    <div class="form-group">
+      <label for="currentPassword">Current Password</label>
+      <input type="password" id="currentPassword" placeholder="Enter current password">
+    </div>
+    
+    <div class="form-group">
+      <label for="newPassword">New Password</label>
+      <input type="password" id="newPassword" placeholder="Enter new password">
+    </div>
+    
+    <div class="form-group">
+      <label for="confirmPassword">Confirm New Password</label>
+      <input type="password" id="confirmPassword" placeholder="Confirm new password">
+    </div>
+    
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" onclick="hideModal('changePasswordModal')">Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="changePassword()">
+        <i class="fas fa-key"></i> Change Password
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/passport.js"></script>
+</body>
+</html>

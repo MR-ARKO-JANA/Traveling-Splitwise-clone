@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Splitwise - Balances</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
+<style>
+.balance-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.balance-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.balance-header h1 {
+    font-size: 36px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+}
+
+.balance-summary-detailed {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.balance-detail-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 30px;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+}
+
+.balance-detail-card h3 {
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.balance-detail-card .amount {
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.balance-detail-card.positive .amount {
+    color: #00e676;
+}
+
+.balance-detail-card.negative .amount {
+    color: #ff5252;
+}
+
+.balance-detail-card.neutral .amount {
+    color: #ffd54f;
+}
+
+.balance-breakdown {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 30px;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 30px;
+}
+
+.balance-breakdown h2 {
+    color: #fff;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.person-balance {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    margin-bottom: 15px;
+    border-left: 4px solid;
+}
+
+.person-balance.owes-you {
+    border-left-color: #00e676;
+}
+
+.person-balance.you-owe {
+    border-left-color: #ff5252;
+}
+
+.person-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.person-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.person-details h4 {
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+.person-details p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+}
+
+.balance-amount {
+    text-align: right;
+}
+
+.balance-amount .amount {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.balance-amount.positive .amount {
+    color: #00e676;
+}
+
+.balance-amount.negative .amount {
+    color: #ff5252;
+}
+
+.settle-btn {
+    background: linear-gradient(135deg, #00e676, #43cea2);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.settle-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0, 230, 118, 0.4);
+}
+
+.back-btn {
+    position: fixed;
+    top: 30px;
+    left: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.expense-history {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 30px;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.expense-history h2 {
+    color: #fff;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.expense-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
+.expense-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.expense-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.expense-details h4 {
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+.expense-details p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+}
+
+.expense-amount {
+    text-align: right;
+    color: #fff;
+    font-weight: bold;
+}
+</style>
+</head>
+<body>
+
+<button class="back-btn" onclick="window.history.back()">
+    <i class="fas fa-arrow-left"></i> Back to Dashboard
+</button>
+
+<div class="balance-container">
+    <div class="balance-header">
+        <h1><i class="fas fa-balance-scale"></i> Your Balances</h1>
+        <p style="color: rgba(255,255,255,0.7);">Detailed breakdown of all your expenses and settlements</p>
+    </div>
+
+    <div class="balance-summary-detailed">
+        <div class="balance-detail-card positive">
+            <h3><i class="fas fa-arrow-down"></i> You are owed</h3>
+            <div class="amount" id="totalOwed">₹0.00</div>
+            <p style="color: rgba(255,255,255,0.7); font-size: 14px;">Money others owe you</p>
+        </div>
+        
+        <div class="balance-detail-card negative">
+            <h3><i class="fas fa-arrow-up"></i> You owe</h3>
+            <div class="amount" id="totalOwe">₹0.00</div>
+            <p style="color: rgba(255,255,255,0.7); font-size: 14px;">Money you owe others</p>
+        </div>
+        
+        <div class="balance-detail-card neutral">
+            <h3><i class="fas fa-calculator"></i> Net Balance</h3>
+            <div class="amount" id="netBalance">₹0.00</div>
+            <p style="color: rgba(255,255,255,0.7); font-size: 14px;">Your overall balance</p>
+        </div>
+    </div>
+
+    <div class="balance-breakdown">
+        <h2><i class="fas fa-users"></i> Balance with Friends</h2>
+        <div id="personBalances">
+            <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 40px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 15px;"></i>
+                <p>Loading balance details...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="expense-history">
+        <h2><i class="fas fa-history"></i> Recent Transactions</h2>
+        <div id="recentTransactions">
+            <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 40px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 15px;"></i>
+                <p>Loading transaction history...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/config.js"></script>
+<script>
+// Check authentication
+const token = localStorage.getItem("token");
+if (!token) {
+    window.location.href = "index.html";
+}
+
+const headers = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
+};
+
+// Load balance details
+async function loadBalanceDetails() {
+    try {
+        // Load summary
+        const summaryRes = await fetch("http://localhost:5000/api/balance/summary", { headers });
+        const summary = await summaryRes.json();
+        
+        document.getElementById("totalOwed").textContent = `₹${summary.get}`;
+        document.getElementById("totalOwe").textContent = `₹${summary.pay}`;
+        document.getElementById("netBalance").textContent = `₹${summary.total}`;
+        
+        // Update card classes based on amounts
+        const netAmount = parseFloat(summary.total);
+        const netCard = document.querySelector('.balance-detail-card.neutral');
+        netCard.className = `balance-detail-card ${netAmount > 0 ? 'positive' : netAmount < 0 ? 'negative' : 'neutral'}`;
+        
+        // Load detailed breakdown
+        const detailsRes = await fetch("http://localhost:5000/api/balance/details", { headers });
+        const details = await detailsRes.json();
+        
+        renderPersonBalances(details);
+        
+    } catch (err) {
+        console.error("Error loading balance details:", err);
+        document.getElementById("personBalances").innerHTML = `
+            <div style="text-align: center; color: #ff5252; padding: 40px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 15px;"></i>
+                <p>Failed to load balance details</p>
+            </div>
+        `;
+    }
+}
+
+// Render person balances
+function renderPersonBalances(details) {
+    const container = document.getElementById("personBalances");
+    
+    if (Object.keys(details).length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 40px;">
+                <i class="fas fa-handshake" style="font-size: 48px; margin-bottom: 15px; opacity: 0.3;"></i>
+                <p>All settled up!</p>
+                <small>You don't owe anyone, and no one owes you.</small>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = "";
+    
+    Object.entries(details).forEach(([personId, person]) => {
+        const balance = person.balance;
+        const isPositive = balance > 0;
+        const absBalance = Math.abs(balance);
+        
+        const personDiv = document.createElement('div');
+        personDiv.className = `person-balance ${isPositive ? 'owes-you' : 'you-owe'}`;
+        
+        personDiv.innerHTML = `
+            <div class="person-info">
+                <div class="person-avatar">
+                    ${person.name.charAt(0).toUpperCase()}
+                </div>
+                <div class="person-details">
+                    <h4>${escapeHtml(person.name)}</h4>
+                    <p>${escapeHtml(person.email)}</p>
+                    <small style="color: rgba(255,255,255,0.5);">
+                        ${person.expenses?.length || 0} shared expense${(person.expenses?.length || 0) !== 1 ? 's' : ''}
+                    </small>
+                </div>
+            </div>
+            <div class="balance-amount ${isPositive ? 'positive' : 'negative'}">
+                <div class="amount">₹${absBalance.toFixed(2)}</div>
+                <p style="font-size: 12px; color: rgba(255,255,255,0.7);">
+                    ${isPositive ? 'owes you' : 'you owe'}
+                </p>
+                ${isPositive ? `
+                    <button class="settle-btn" onclick="requestSettlement('${personId}', '${person.name}', ${absBalance})">
+                        <i class="fas fa-bell"></i> Request
+                    </button>
+                ` : `
+                    <button class="settle-btn" onclick="settleDebt('${personId}', '${person.name}', ${absBalance})">
+                        <i class="fas fa-check"></i> Settle
+                    </button>
+                `}
+            </div>
+        `;
+        
+        container.appendChild(personDiv);
+    });
+}
+
+// Load recent transactions
+async function loadRecentTransactions() {
+    try {
+        const res = await fetch("http://localhost:5000/api/profile/activity", { headers });
+        const data = await res.json();
+        
+        const container = document.getElementById("recentTransactions");
+        
+        if (!data.recentExpenses || data.recentExpenses.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 40px;">
+                    <i class="fas fa-receipt" style="font-size: 48px; margin-bottom: 15px; opacity: 0.3;"></i>
+                    <p>No recent transactions</p>
+                    <small>Your expense history will appear here</small>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = "";
+        
+        data.recentExpenses.slice(0, 10).forEach(expense => {
+            const expenseDiv = document.createElement('div');
+            expenseDiv.className = 'expense-item';
+            
+            const categoryIcon = getCategoryIcon(expense.category);
+            const splitAmount = expense.amount / (expense.splitWith?.length || 1);
+            
+            expenseDiv.innerHTML = `
+                <div class="expense-info">
+                    <div class="expense-icon">
+                        <i class="${categoryIcon}"></i>
+                    </div>
+                    <div class="expense-details">
+                        <h4>${escapeHtml(expense.description)}</h4>
+                        <p>
+                            Paid by ${escapeHtml(expense.paidBy?.name || 'Unknown')} • 
+                            ${formatDate(expense.createdAt)}
+                        </p>
+                        <small style="color: rgba(255,255,255,0.5);">
+                            Split among ${expense.splitWith?.length || 0} people
+                        </small>
+                    </div>
+                </div>
+                <div class="expense-amount">
+                    <div>₹${expense.amount.toFixed(2)}</div>
+                    <small style="color: rgba(255,255,255,0.7);">
+                        Your share: ₹${splitAmount.toFixed(2)}
+                    </small>
+                </div>
+            `;
+            
+            container.appendChild(expenseDiv);
+        });
+        
+    } catch (err) {
+        console.error("Error loading transactions:", err);
+        document.getElementById("recentTransactions").innerHTML = `
+            <div style="text-align: center; color: #ff5252; padding: 40px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 15px;"></i>
+                <p>Failed to load transaction history</p>
+            </div>
+        `;
+    }
+}
+
+// Request settlement
+async function requestSettlement(personId, personName, amount) {
+    if (confirm(`Send a settlement request to ${personName} for ₹${amount.toFixed(2)}?`)) {
+        try {
+            // For now, we'll just show a success message
+            // In a real app, this would send a notification/email
+            showNotification(`Settlement request sent to ${personName}!`, "success");
+            
+            // Add to activity log
+            const activities = JSON.parse(localStorage.getItem('recentActivities') || '[]');
+            activities.unshift({
+                description: `Requested ₹${amount.toFixed(2)} from ${personName}`,
+                type: 'settlement',
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem('recentActivities', JSON.stringify(activities.slice(0, 50)));
+            
+        } catch (err) {
+            console.error("Settlement request error:", err);
+            showNotification("Failed to send settlement request", "error");
+        }
+    }
+}
+
+// Settle debt
+async function settleDebt(personId, personName, amount) {
+    if (confirm(`Mark your debt of ₹${amount.toFixed(2)} to ${personName} as settled?`)) {
+        try {
+            // For now, we'll simulate settling the debt
+            // In a real app, this would create a settlement record
+            showNotification(`Debt of ₹${amount.toFixed(2)} to ${personName} marked as settled!`, "success");
+            
+            // Add to activity log
+            const activities = JSON.parse(localStorage.getItem('recentActivities') || '[]');
+            activities.unshift({
+                description: `Settled ₹${amount.toFixed(2)} debt to ${personName}`,
+                type: 'settlement',
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem('recentActivities', JSON.stringify(activities.slice(0, 50)));
+            
+            // Refresh the balance data
+            setTimeout(() => {
+                loadBalanceDetails();
+            }, 1000);
+            
+        } catch (err) {
+            console.error("Settlement error:", err);
+            showNotification("Failed to record settlement", "error");
+        }
+    }
+}
+
+// Add notification function
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 10px;
+        z-index: 10000;
+        font-weight: 500;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        animation: slideIn 0.3s ease;
+        color: white;
+        max-width: 300px;
+    `;
+    
+    if (type === 'success') {
+        notification.style.background = 'linear-gradient(135deg, #00e676, #43cea2)';
+    } else if (type === 'error') {
+        notification.style.background = 'linear-gradient(135deg, #ff5252, #dd2476)';
+    } else {
+        notification.style.background = 'linear-gradient(135deg, #2196f3, #21cbf3)';
+    }
+    
+    notification.innerHTML = `
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+        ${message}
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 4000);
+}
+
+// Add CSS for slide in animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+`;
+document.head.appendChild(style);
+
+// Utility functions
+function getCategoryIcon(category) {
+    const icons = {
+        food: 'fas fa-utensils',
+        transport: 'fas fa-car',
+        accommodation: 'fas fa-bed',
+        entertainment: 'fas fa-film',
+        utilities: 'fas fa-bolt',
+        other: 'fas fa-receipt'
+    };
+    return icons[category] || icons.other;
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    
+    return date.toLocaleDateString();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    loadBalanceDetails();
+    loadRecentTransactions();
+});
+</script>
+
+</body>
+</html>
