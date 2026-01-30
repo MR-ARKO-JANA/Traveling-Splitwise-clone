@@ -26,15 +26,82 @@ document.addEventListener('DOMContentLoaded', async function() {
     loadRecentActivity();
 });
 
+// Refresh profile picture when window gains focus (user returns from profile page)
+window.addEventListener('focus', function() {
+    // Small delay to ensure any profile changes are saved
+    setTimeout(() => {
+        loadCurrentUser();
+    }, 500);
+});
+
+// Listen for localStorage changes (when profile picture is updated)
+window.addEventListener('storage', function(e) {
+    if (e.key === 'user') {
+        loadCurrentUser();
+    }
+});
+
+// Also listen for custom storage events from same window
+window.addEventListener('storage', function(e) {
+    if (e.key === 'user') {
+        const userData = JSON.parse(e.newValue || '{}');
+        currentUser = userData;
+        updateDashboardProfilePicture();
+    }
+});
+
 // Load current user info
 async function loadCurrentUser() {
     try {
         const stored = localStorage.getItem("user");
         if (stored) {
             currentUser = JSON.parse(stored);
+            updateDashboardProfilePicture();
+        } else {
+            // If no stored user, fetch from server
+            await fetchCurrentUserFromServer();
         }
     } catch (err) {
         console.error("Error loading user:", err);
+        await fetchCurrentUserFromServer();
+    }
+}
+
+// Fetch current user from server
+async function fetchCurrentUserFromServer() {
+    try {
+        const res = await fetch("http://localhost:5000/api/profile/passport", { headers });
+        if (res.ok) {
+            const data = await res.json();
+            currentUser = data.user;
+            localStorage.setItem("user", JSON.stringify(currentUser));
+            updateDashboardProfilePicture();
+        }
+    } catch (err) {
+        console.error("Error fetching user from server:", err);
+    }
+}
+
+// Update profile picture in dashboard
+function updateDashboardProfilePicture() {
+    const profilePic = document.getElementById('dashboardProfilePic');
+    const defaultIcon = document.getElementById('defaultProfileIcon');
+    
+    if (profilePic && currentUser) {
+        if (currentUser.profileImage) {
+            profilePic.src = `http://localhost:5000${currentUser.profileImage}`;
+            profilePic.style.display = 'block';
+            if (defaultIcon) defaultIcon.style.display = 'none';
+        } else {
+            profilePic.src = 'https://via.placeholder.com/44x44/667eea/ffffff?text=👤';
+            profilePic.style.display = 'block';
+            if (defaultIcon) defaultIcon.style.display = 'none';
+        }
+        
+        profilePic.onerror = function() {
+            this.style.display = 'none';
+            if (defaultIcon) defaultIcon.style.display = 'flex';
+        };
     }
 }
 
@@ -47,7 +114,7 @@ function setupEventListeners() {
     }
 
     // Profile button
-    const profileBtn = document.querySelector(".userinfo");
+    const profileBtn = document.querySelector("#profileBtn");
     if (profileBtn) {
         profileBtn.addEventListener("click", () => {
             window.location.href = "profile.html";
@@ -141,6 +208,7 @@ async function refreshDashboard() {
     showLoading(true);
     try {
         await Promise.all([
+            loadCurrentUser(), // This will update the profile picture
             loadGroups(),
             updateBalances()
         ]);

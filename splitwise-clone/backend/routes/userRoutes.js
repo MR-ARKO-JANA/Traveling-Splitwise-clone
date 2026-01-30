@@ -44,49 +44,65 @@ const upload = multer({
 
 router.get("/passport", auth, async (req, res) => {
     try {
+        // Get user data first
         const user = await User.findById(req.user.id).select("-password");
-        
-        // Fetch stats for the passport card
-        const currentUser = await User.findById(req.user.id);
-        const groupCount = await Group.countDocuments({ members: currentUser.email });
-        const expenseCount = await Expense.countDocuments({ paidBy: req.user.id });
-        
-        // Calculate actual net balance
-        const expenses = await Expense.find({ 
-            $or: [{ paidBy: req.user.id }, { splitWith: req.user.id }] 
-        }).populate('paidBy splitWith');
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
 
-        let totalPaidByUser = 0; 
-        let totalUserOwes = 0;
-        
-        expenses.forEach(exp => {
-            const splitAmount = exp.amount / exp.splitWith.length;
-            
-            // If user paid this expense
-            if (exp.paidBy._id.toString() === req.user.id.toString()) {
-                totalPaidByUser += exp.amount;
-                totalUserOwes += splitAmount; // User still owes their share
-            } 
-            // If user is part of split but didn't pay
-            else if (exp.splitWith.some(member => member._id.toString() === req.user.id.toString())) {
-                totalUserOwes += splitAmount;
-            }
-        });
+        // Get basic stats with timeout protection
+        const [groupCount, expenseCount] = await Promise.all([
+            Group.countDocuments({ members: user.email }).maxTimeMS(5000),
+            Expense.countDocuments({ paidBy: req.user.id }).maxTimeMS(5000)
+        ]);
 
-        const netBalance = totalPaidByUser - totalUserOwes;
+        // Simplified balance calculation with timeout
+        let netBalance = 0;
+        try {
+            const expenses = await Expense.find({ 
+                $or: [{ paidBy: req.user.id }, { splitWith: req.user.id }] 
+            })
+            .select('amount paidBy splitWith')
+            .maxTimeMS(5000)
+            .lean(); // Use lean() for better performance
 
-        res.json({
-            user,
+            expenses.forEach(exp => {
+                const splitAmount = exp.amount / (exp.splitWith?.length || 1);
+                
+                if (exp.paidBy.toString() === req.user.id.toString()) {
+                    netBalance += exp.amount - splitAmount;
+                } else if (exp.splitWith?.some(member => member.toString() === req.user.id.toString())) {
+                    netBalance -= splitAmount;
+                }
+            });
+        } catch (balanceError) {
+            console.error("Balance calculation error:", balanceError);
+            // Continue with netBalance = 0 if calculation fails
+        }
+
+        const response = {
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                profileImage: user.profileImage,
+                createdAt: user.createdAt
+            },
             stats: {
-                groups: groupCount,
-                expenses: expenseCount,
+                groups: groupCount || 0,
+                expenses: expenseCount || 0,
                 settlements: 0 
             },
             netBalance: netBalance.toFixed(2)
-        });
+        };
+
+        res.json(response);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send("Server Error");
+        console.error("Passport route error:", err);
+        res.status(500).json({ 
+            message: "Failed to load profile data",
+            error: err.message 
+        });
     }
 });
 

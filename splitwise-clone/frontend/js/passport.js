@@ -9,15 +9,20 @@ const headers = {
     "Authorization": `Bearer ${token}`
 };
 
+// Global flag to prevent multiple simultaneous loads
+let isLoadingPassport = false;
+
 // Load passport data on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize immediately
     setupDragAndDrop();
     addSuccessAnimation();
     
-    // Load data
-    loadPassport();
-    loadRecentActivity();
+    // Load data only once
+    if (!isLoadingPassport) {
+        loadPassport();
+        loadRecentActivity();
+    }
 });
 
 // Setup drag and drop for profile image
@@ -80,8 +85,16 @@ function setupDragAndDrop() {
 
 // Load and populate passport data
 async function loadPassport() {
+    // Prevent multiple simultaneous calls
+    if (isLoadingPassport) {
+        console.log("Already loading passport, skipping...");
+        return;
+    }
+    
+    isLoadingPassport = true;
+    
+    // Set a shorter timeout for better UX
     const loadingTimeout = setTimeout(() => {
-        // If loading takes too long, show error
         const nameElement = document.getElementById('userName');
         const emailElement = document.getElementById('userEmail');
         const joinDateElement = document.getElementById('joinDate');
@@ -92,10 +105,11 @@ async function loadPassport() {
             joinDateElement.textContent = "Check your internet connection";
             showNotification("Connection timeout. Please refresh the page.", "error");
         }
-    }, 10000); // 10 second timeout
+        isLoadingPassport = false;
+    }, 8000); // Reduced to 8 seconds
 
     try {
-        // Show loading state
+        // Show loading state immediately
         const nameElement = document.getElementById('userName');
         const emailElement = document.getElementById('userEmail');
         const joinDateElement = document.getElementById('joinDate');
@@ -104,10 +118,18 @@ async function loadPassport() {
         if (emailElement) emailElement.textContent = "Loading...";
         if (joinDateElement) joinDateElement.textContent = "Loading...";
 
-        const res = await fetch("http://localhost:5000/api/profile/passport", { 
-            headers,
-            timeout: 8000 // 8 second timeout
+        // Create a timeout promise for the fetch
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Request timeout')), 6000);
         });
+
+        const fetchPromise = fetch("http://localhost:5000/api/profile/passport", { 
+            headers,
+            method: 'GET'
+        });
+
+        // Race between fetch and timeout
+        const res = await Promise.race([fetchPromise, timeoutPromise]);
         
         clearTimeout(loadingTimeout);
         
@@ -118,7 +140,7 @@ async function loadPassport() {
                 window.location.href = "index.html";
                 return;
             }
-            throw new Error(`HTTP error! status: ${res.status}`);
+            throw new Error(`Server error: ${res.status}`);
         }
         
         const data = await res.json();
@@ -180,10 +202,24 @@ async function loadPassport() {
         // Store user data for later use
         localStorage.setItem("user", JSON.stringify(data.user));
         
+        console.log("Profile loaded successfully");
+        
+        // Mark page as fully loaded
+        document.body.classList.add('profile-loaded');
+        
     } catch (err) {
         clearTimeout(loadingTimeout);
         console.error("Passport load error:", err);
-        showNotification("Failed to load profile data", "error");
+        
+        // Show specific error messages
+        let errorMessage = "Failed to load profile data";
+        if (err.message === 'Request timeout') {
+            errorMessage = "Connection timeout. Please check your internet connection.";
+        } else if (err.message.includes('Failed to fetch')) {
+            errorMessage = "Cannot connect to server. Please check if the server is running.";
+        }
+        
+        showNotification(errorMessage, "error");
         
         // Show error state
         const nameElement = document.getElementById('userName');
@@ -193,6 +229,8 @@ async function loadPassport() {
         if (nameElement) nameElement.textContent = "Error loading";
         if (emailElement) emailElement.textContent = "Please refresh";
         if (joinDateElement) joinDateElement.textContent = "Check connection";
+    } finally {
+        isLoadingPassport = false;
     }
 }
 
@@ -417,43 +455,51 @@ function toggleSetting(element) {
 }
 
 // Handle profile image upload
-function triggerClick() {
-    document.querySelector('#profileImage').click();
-}
+// ================= PROFILE IMAGE HANDLING =================
 
-function displayImage(input) {
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-        
-        // Validate file size (5MB max)
-        if (file.size > 5 * 1024 * 1024) {
-            showNotification("File size must be less than 5MB", "error");
-            return;
-        }
-        
-        // Validate file type
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-        if (!allowedTypes.includes(file.type)) {
-            showNotification("Only JPEG, PNG, and GIF images are allowed", "error");
-            return;
-        }
-        
-        // Show preview immediately
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const profileDisplay = document.querySelector('#profileDisplay');
-            if (profileDisplay) {
-                profileDisplay.setAttribute('src', e.target.result);
-                // Add a loading overlay
-                showImageUploadProgress(true);
-            }
-        };
-        reader.readAsDataURL(file);
-        
-        // Upload the image to the server
-        uploadProfileImage(file);
+// Open file picker when image or camera icon clicked
+function triggerClick() {
+    const input = document.getElementById("profileImage");
+    if (input) {
+        input.click();
     }
 }
+
+// Handle selected image
+function displayImage(input) {
+    if (!input.files || !input.files[0]) return;
+
+    const file = input.files[0];
+
+    // ✅ Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showNotification("File size must be less than 5MB", "error");
+        input.value = "";
+        return;
+    }
+
+    // ✅ Validate file type
+    if (!file.type.startsWith("image/")) {
+        showNotification("Please select a valid image file", "error");
+        input.value = "";
+        return;
+    }
+
+    // ✅ Show preview instantly
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const profileDisplay = document.getElementById("profileDisplay");
+        if (profileDisplay) {
+            profileDisplay.src = e.target.result;
+            showImageUploadProgress(true);
+        }
+    };
+    reader.readAsDataURL(file);
+
+    // ✅ Upload to server
+    uploadProfileImage(file);
+}
+
 
 // Show upload progress
 function showImageUploadProgress(show) {
@@ -519,6 +565,12 @@ async function uploadProfileImage(file) {
             setTimeout(() => {
                 avatar.style.animation = '';
             }, 600);
+            
+            // Trigger storage event to notify other tabs/windows
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: 'user',
+                newValue: JSON.stringify(currentUser)
+            }));
         } else {
             showNotification(data.message || "Failed to upload image", "error");
             // Revert to previous image on error
@@ -667,6 +719,3 @@ window.onclick = function(event) {
         event.target.style.display = 'none';
     }
 }
-
-// Load passport data
-loadPassport();

@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>User Profile - Splitwise</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -117,8 +120,9 @@ body::before{
   border-radius: 50%;
   border: 4px solid rgba(255, 255, 255, 0.5);
   flex-shrink: 0;
-  overflow: hidden;
+  overflow: visible; /* Changed to visible for upload hint */
   transition: all 0.3s ease;
+  margin-bottom: 30px; /* Add space for upload hint */
 }
 
 .avatar.drag-over {
@@ -165,6 +169,15 @@ body::before{
 .camera-overlay i {
   color: white;
   font-size: 14px;
+}
+
+.upload-hint {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.avatar:hover .upload-hint {
+  opacity: 1;
 }
 
 .avatar::after{
@@ -553,8 +566,13 @@ body::before{
       <input type="file" id="profileImage" onchange="displayImage(this)" style="display: none;" accept="image/jpeg,image/jpg,image/png,image/gif">
       
       <!-- Camera icon overlay -->
-      <div class="camera-overlay" onclick="triggerClick()">
+      <div class="camera-overlay" onclick="triggerClick()" title="Change profile picture">
         <i class="fas fa-camera"></i>
+      </div>
+      
+      <!-- Upload instructions -->
+      <div class="upload-hint" style="position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); font-size: 10px; color: rgba(255,255,255,0.6); text-align: center; white-space: nowrap;">
+        Click or drag image to change
       </div>
     </div>
 
@@ -690,5 +708,52 @@ body::before{
 
 <script src="js/config.js"></script>
 <script src="js/passport.js"></script>
+
+<script>
+// Ensure page loading indicator stops
+window.addEventListener('load', function() {
+    // Force stop any loading indicators
+    setTimeout(() => {
+        // Mark page as completely loaded
+        document.readyState = 'complete';
+        
+        // Add loaded class to body
+        document.body.classList.add('page-loaded');
+        
+        // Dispatch a custom event to signal completion
+        window.dispatchEvent(new Event('pageFullyLoaded'));
+        
+        console.log("Page fully loaded and ready");
+    }, 500); // Reduced timeout
+});
+
+// Handle any remaining loading states
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM loaded");
+    
+    // Set a maximum timeout to force stop loading
+    setTimeout(() => {
+        if (!document.body.classList.contains('page-loaded')) {
+            document.body.classList.add('page-loaded');
+            console.log("Forced page load completion");
+        }
+    }, 3000); // 3 second maximum
+});
+
+// Prevent any infinite loading loops
+let loadAttempts = 0;
+const originalFetch = window.fetch;
+window.fetch = function(...args) {
+    loadAttempts++;
+    if (loadAttempts > 10) {
+        console.warn("Too many fetch attempts, preventing potential loop");
+        return Promise.reject(new Error("Too many requests"));
+    }
+    
+    return originalFetch.apply(this, args).finally(() => {
+        setTimeout(() => loadAttempts--, 1000); // Reset counter after 1 second
+    });
+};
+</script>
 </body>
 </html>
