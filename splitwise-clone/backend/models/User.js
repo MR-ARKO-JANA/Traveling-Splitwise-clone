@@ -1,19 +1,19 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
 
 const UserSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    profileImage: { type: String, default: null }
+    profileImage: { type: String, default: null },
+    
+    // OTP fields for password reset
+    resetOTP: { type: String, default: null },
+    resetOTPExpires: { type: Date, default: null },
+    resetToken: { type: String, default: null }
 }, {
     timestamps: true
 });
 
-UserSchema.pre("save", async function(next) {
-    if (!this.isModified("password")) return next();
-    this.password = await bcrypt.hash(this.password, 10);
-    
-});
+// NO PRE-SAVE MIDDLEWARE - Handle password hashing manually in routes
 
-module.exports = mongoose.models.User || mongoose.model("User", UserSchema);
+module.exports = mongoose.model("User", UserSchema);

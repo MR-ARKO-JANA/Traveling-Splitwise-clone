@@ -1,3 +1,9 @@
+// Global variables for OTP functionality
+let otpTimer;
+let otpCountdown = 300; // 5 minutes in seconds
+let currentResetEmail = '';
+let currentOTPToken = '';
+
 document.getElementById("loginForm").addEventListener("submit", async e => {
   e.preventDefault();
   const btn = e.target.querySelector("button");
@@ -23,13 +29,353 @@ document.getElementById("loginForm").addEventListener("submit", async e => {
       localStorage.setItem("token", data.token);
       window.location.href = "dashboard.html";
     } else {
-      alert("⚠️ " + (data.message || "Invalid Credentials"));
+      showMessage("⚠️ " + (data.message || "Invalid Credentials"), "error");
       btn.innerText = originalText;
       btn.disabled = false;
     }
   } catch (err) {
-    alert("❌ Network Error: Server is offline");
+    showMessage("❌ Network Error: Server is offline", "error");
     btn.innerText = originalText;
     btn.disabled = false;
   }
 });
+
+// ================= FORGOT PASSWORD FUNCTIONALITY =================
+
+// Open forgot password modal
+function openForgotPasswordModal() {
+  document.getElementById('forgotPasswordModal').style.display = 'block';
+  resetModalState();
+}
+
+// Close forgot password modal
+function closeForgotPasswordModal() {
+  document.getElementById('forgotPasswordModal').style.display = 'none';
+  clearOTPTimer();
+  resetModalState();
+}
+
+// Reset modal to initial state
+function resetModalState() {
+  // Reset steps
+  document.getElementById('emailStep').style.display = 'block';
+  document.getElementById('otpStep').style.display = 'none';
+  document.getElementById('passwordStep').style.display = 'none';
+  
+  // Reset step indicators
+  document.getElementById('step1').className = 'step active';
+  document.getElementById('step2').className = 'step';
+  document.getElementById('step3').className = 'step';
+  
+  // Clear inputs
+  document.getElementById('resetEmail').value = '';
+  document.getElementById('otpCode').value = '';
+  document.getElementById('newPassword').value = '';
+  document.getElementById('confirmPassword').value = '';
+  
+  // Clear messages
+  document.getElementById('modalMessage').innerHTML = '';
+  
+  // Reset variables
+  currentResetEmail = '';
+  currentOTPToken = '';
+  otpCountdown = 300;
+}
+
+// Send OTP to email
+async function sendOTP() {
+  const email = document.getElementById('resetEmail').value.trim();
+  
+  if (!email) {
+    showModalMessage('Please enter your email address', 'error');
+    return;
+  }
+  
+  if (!isValidEmail(email)) {
+    showModalMessage('Please enter a valid email address', 'error');
+    return;
+  }
+  
+  const btn = event.target;
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+  btn.disabled = true;
+  
+  try {
+    console.log('Sending OTP request for email:', email);
+    
+    const res = await fetch('http://localhost:5000/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    
+    console.log('Response status:', res.status);
+    
+    const data = await res.json();
+    console.log('Response data:', data);
+    
+    if (res.ok) {
+      currentResetEmail = email;
+      currentOTPToken = data.token;
+      showModalMessage('OTP sent successfully! Check your email and server console.', 'success');
+      
+      // Move to step 2
+      setTimeout(() => {
+        document.getElementById('emailStep').style.display = 'none';
+        document.getElementById('otpStep').style.display = 'block';
+        document.getElementById('step1').className = 'step completed';
+        document.getElementById('step2').className = 'step active';
+        startOTPTimer();
+      }, 1500);
+    } else {
+      console.error('Server error:', data);
+      showModalMessage(data.message || 'Failed to send OTP', 'error');
+    }
+  } catch (err) {
+    console.error('Network error:', err);
+    showModalMessage('Network error. Please check if the server is running.', 'error');
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
+}
+
+// Verify OTP
+async function verifyOTP() {
+  const otp = document.getElementById('otpCode').value.trim();
+  
+  if (!otp || otp.length !== 6) {
+    showModalMessage('Please enter a valid 6-digit OTP', 'error');
+    return;
+  }
+  
+  const btn = event.target;
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+  btn.disabled = true;
+  
+  try {
+    const res = await fetch('http://localhost:5000/api/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        email: currentResetEmail,
+        otp: otp,
+        token: currentOTPToken
+      })
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok) {
+      showModalMessage('OTP verified successfully!', 'success');
+      clearOTPTimer();
+      
+      // Move to step 3
+      setTimeout(() => {
+        document.getElementById('otpStep').style.display = 'none';
+        document.getElementById('passwordStep').style.display = 'block';
+        document.getElementById('step2').className = 'step completed';
+        document.getElementById('step3').className = 'step active';
+      }, 1500);
+    } else {
+      showModalMessage(data.message || 'Invalid OTP', 'error');
+    }
+  } catch (err) {
+    showModalMessage('Network error. Please try again.', 'error');
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
+}
+
+// Resend OTP
+async function resendOTP() {
+  const btn = event.target;
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resending...';
+  btn.disabled = true;
+  
+  try {
+    const res = await fetch('http://localhost:5000/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: currentResetEmail })
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok) {
+      currentOTPToken = data.token;
+      showModalMessage('New OTP sent successfully!', 'success');
+      otpCountdown = 300;
+      startOTPTimer();
+    } else {
+      showModalMessage(data.message || 'Failed to resend OTP', 'error');
+    }
+  } catch (err) {
+    showModalMessage('Network error. Please try again.', 'error');
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
+}
+
+// Reset password
+async function resetPassword() {
+  const newPassword = document.getElementById('newPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+  
+  if (!newPassword || !confirmPassword) {
+    showModalMessage('Please fill in all fields', 'error');
+    return;
+  }
+  
+  if (newPassword.length < 6) {
+    showModalMessage('Password must be at least 6 characters long', 'error');
+    return;
+  }
+  
+  if (newPassword !== confirmPassword) {
+    showModalMessage('Passwords do not match', 'error');
+    return;
+  }
+  
+  const btn = event.target;
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+  btn.disabled = true;
+  
+  try {
+    const res = await fetch('http://localhost:5000/api/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        email: currentResetEmail,
+        newPassword: newPassword,
+        token: currentOTPToken
+      })
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok) {
+      showModalMessage('Password reset successfully! You can now login with your new password.', 'success');
+      
+      // Close modal after success
+      setTimeout(() => {
+        closeForgotPasswordModal();
+        showMessage('Password reset successful! Please login with your new password.', 'success');
+      }, 2000);
+    } else {
+      showModalMessage(data.message || 'Failed to reset password', 'error');
+    }
+  } catch (err) {
+    showModalMessage('Network error. Please try again.', 'error');
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
+}
+
+// Start OTP countdown timer
+function startOTPTimer() {
+  clearOTPTimer();
+  
+  otpTimer = setInterval(() => {
+    const minutes = Math.floor(otpCountdown / 60);
+    const seconds = otpCountdown % 60;
+    
+    document.getElementById('countdown').textContent = 
+      `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    
+    if (otpCountdown <= 0) {
+      clearOTPTimer();
+      showModalMessage('OTP expired. Please request a new one.', 'error');
+    }
+    
+    otpCountdown--;
+  }, 1000);
+}
+
+// Clear OTP timer
+function clearOTPTimer() {
+  if (otpTimer) {
+    clearInterval(otpTimer);
+    otpTimer = null;
+  }
+}
+
+// Utility functions
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+function showModalMessage(message, type) {
+  const messageDiv = document.getElementById('modalMessage');
+  messageDiv.innerHTML = `<div class="${type}-message">${message}</div>`;
+  
+  // Clear message after 5 seconds
+  setTimeout(() => {
+    messageDiv.innerHTML = '';
+  }, 5000);
+}
+
+function showMessage(message, type) {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 10px;
+    z-index: 10000;
+    font-weight: 500;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s ease;
+    color: white;
+    max-width: 300px;
+  `;
+  
+  if (type === 'success') {
+    notification.style.background = 'linear-gradient(135deg, #00e676, #43cea2)';
+  } else if (type === 'error') {
+    notification.style.background = 'linear-gradient(135deg, #ff5252, #dd2476)';
+  } else {
+    notification.style.background = 'linear-gradient(135deg, #2196f3, #21cbf3)';
+  }
+  
+  notification.innerHTML = message;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.remove();
+  }, 4000);
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+  const modal = document.getElementById('forgotPasswordModal');
+  if (event.target === modal) {
+    closeForgotPasswordModal();
+  }
+}
+
+// Add CSS animation
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+`;
+document.head.appendChild(style);

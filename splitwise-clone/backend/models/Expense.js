@@ -9,4 +9,4 @@ const ExpenseSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.models.Expense || mongoose.model("Expense", ExpenseSchema);
+module.exports = mongoose.model("Expense", ExpenseSchema);
