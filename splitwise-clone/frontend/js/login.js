@@ -1,6 +1,6 @@
-// Global variables for OTP functionality
+// Some variables to keep track of our OTP stuff
 let otpTimer;
-let otpCountdown = 300; // 5 minutes in seconds
+let otpCountdown = 300; // 5 minutes should be plenty
 let currentResetEmail = '';
 let currentOTPToken = '';
 
@@ -9,8 +9,8 @@ document.getElementById("loginForm").addEventListener("submit", async e => {
   const btn = e.target.querySelector("button");
   const originalText = btn.innerText;
   
-  // Dynamic Loading State
-  btn.innerText = "Verifying...";
+  // Let the user know we're working on it
+  btn.innerText = "Checking...";
   btn.disabled = true;
 
   const email = document.getElementById("email").value;
@@ -26,15 +26,16 @@ document.getElementById("loginForm").addEventListener("submit", async e => {
     const data = await res.json();
 
     if (res.ok) {
+      // Sweet! They're in
       localStorage.setItem("token", data.token);
       window.location.href = "dashboard.html";
     } else {
-      showMessage("⚠️ " + (data.message || "Invalid Credentials"), "error");
+      showMessage("⚠️ " + (data.message || "Those credentials don't look right"), "error");
       btn.innerText = originalText;
       btn.disabled = false;
     }
   } catch (err) {
-    showMessage("❌ Network Error: Server is offline", "error");
+    showMessage("❌ Can't reach the server right now", "error");
     btn.innerText = originalText;
     btn.disabled = false;
   }
@@ -82,27 +83,27 @@ function resetModalState() {
   otpCountdown = 300;
 }
 
-// Send OTP to email
+// Let's send that OTP!
 async function sendOTP() {
   const email = document.getElementById('resetEmail').value.trim();
   
   if (!email) {
-    showModalMessage('Please enter your email address', 'error');
+    showModalMessage('Hey, we need an email address first!', 'error');
     return;
   }
   
   if (!isValidEmail(email)) {
-    showModalMessage('Please enter a valid email address', 'error');
+    showModalMessage('That email doesn\'t look quite right', 'error');
     return;
   }
   
   const btn = event.target;
   const originalText = btn.innerHTML;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending OTP...';
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending your code...';
   btn.disabled = true;
   
   try {
-    console.log('Sending OTP request for email:', email);
+    console.log('Sending OTP to:', email);
     
     const res = await fetch('http://localhost:5000/api/auth/forgot-password', {
       method: 'POST',
@@ -110,22 +111,22 @@ async function sendOTP() {
       body: JSON.stringify({ email })
     });
     
-    console.log('Response status:', res.status);
+    console.log('Server says:', res.status);
     
     const data = await res.json();
-    console.log('Response data:', data);
+    console.log('Got back:', data);
     
     if (res.ok) {
       currentResetEmail = email;
       currentOTPToken = data.token;
       
       if (data.emailSent) {
-        showModalMessage('✅ OTP sent successfully to your email! Check your inbox.', 'success');
+        showModalMessage('✅ Code sent! Check your email inbox', 'success');
       } else {
-        showModalMessage('⚠️ OTP generated but email sending failed. Check server console for backup code.', 'warning');
+        showModalMessage('⚠️ Code generated but email had issues. Check the server console for your code.', 'warning');
       }
       
-      // Move to step 2
+      // Move to the next step
       setTimeout(() => {
         document.getElementById('emailStep').style.display = 'none';
         document.getElementById('otpStep').style.display = 'block';
@@ -134,12 +135,12 @@ async function sendOTP() {
         startOTPTimer();
       }, 2000);
     } else {
-      console.error('Server error:', data);
-      showModalMessage(data.message || 'Failed to send OTP', 'error');
+      console.error('Server trouble:', data);
+      showModalMessage(data.message || 'Something went wrong sending the code', 'error');
     }
   } catch (err) {
-    console.error('Network error:', err);
-    showModalMessage('❌ Network error. Please check if the server is running.', 'error');
+    console.error('Network trouble:', err);
+    showModalMessage('❌ Can\'t reach the server right now', 'error');
   } finally {
     btn.innerHTML = originalText;
     btn.disabled = false;
