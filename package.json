@@ -96,6 +96,7 @@
     "multer": "^2.0.2",
     "negotiator": "^1.0.0",
     "node-addon-api": "^8.5.0",
+    "node-fetch": "^3.3.2",
     "node-gyp-build": "^4.8.4",
     "nodemailer": "^7.0.13",
     "normalize-path": "^3.0.0",

@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key-change-this-
 
 const nodemailer = require("nodemailer");
 
-// Professional OTP email sending function
+// Professional OTP email sending function with fallback
 async function sendOTPEmail(email, otp, userName = "User") {
     try {
         console.log(`📧 Attempting to send OTP email to: ${email}`);
@@ -26,9 +26,13 @@ async function sendOTPEmail(email, otp, userName = "User") {
             }
         });
 
-        // Test the connection
-        await transporter.verify();
-        console.log('✅ SMTP connection verified successfully');
+        // Test the connection first
+        try {
+            await transporter.verify();
+            console.log('✅ SMTP connection verified successfully');
+        } catch (verifyError) {
+            console.log('⚠️ SMTP verification failed, but continuing with send attempt');
+        }
 
         // Professional email template
         const mailOptions = {
@@ -56,7 +60,7 @@ async function sendOTPEmail(email, otp, userName = "User") {
                             <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">Hi ${userName}!</h2>
                             
                             <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;">
-                                We received a request to reset your password for your Splitwise Clone account. Use the verification code below to reset your password:
+                                We received a request to reset your password for your Splitwise Clone account. Use the verification code below:
                             </p>
                             
                             <!-- OTP Code Box -->
@@ -77,13 +81,6 @@ async function sendOTPEmail(email, otp, userName = "User") {
                                     <li>Never share this code with anyone</li>
                                     <li>If you didn't request this, please ignore this email</li>
                                 </ul>
-                            </div>
-                            
-                            <!-- Action Button -->
-                            <div style="text-align: center; margin: 30px 0;">
-                                <a href="#" style="display: inline-block; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
-                                    🔐 Reset My Password
-                                </a>
                             </div>
                             
                             <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 25px 0 0 0; text-align: center;">
@@ -121,30 +118,34 @@ async function sendOTPEmail(email, otp, userName = "User") {
         return { success: true, messageId: info.messageId };
         
     } catch (error) {
-        console.error('❌ Email sending failed:', error);
+        console.error('❌ Email sending failed:', error.message);
         console.error('❌ Error details:', {
             message: error.message,
             code: error.code,
             command: error.command
         });
         
-        // Enhanced backup logging
+        // Enhanced backup logging - This is the working part!
         console.log(`\n🚨 ===== EMAIL SENDING FAILED - BACKUP LOG =====`);
         console.log(`📧 Recipient: ${email}`);
         console.log(`🔐 OTP Code: ${otp}`);
+        console.log(`👤 User Name: ${userName}`);
         console.log(`⏰ Generated at: ${new Date().toLocaleString()}`);
         console.log(`⏰ Expires in: 5 minutes`);
         console.log(`❌ Error: ${error.message}`);
         console.log(`🔧 Suggestion: Check Gmail App Password and 2FA settings`);
         console.log(`===============================================\n`);
         
-        return { success: false, error: error.message };
+        // Return success false but system continues to work
+        return { success: false, error: error.message, otp: otp };
     }
 }
 
 // Test route
 router.get("/test", (req, res) => {
     console.log("✅ Test route hit!");
+    console.log("📧 MAIL_USER:", process.env.MAIL_USER);
+    console.log("🔑 MAIL_PASS length:", process.env.MAIL_PASS ? process.env.MAIL_PASS.length : 'undefined');
     res.json({ message: "Auth routes working!", timestamp: new Date() });
 });
 
@@ -212,47 +213,77 @@ router.post("/login", async (req, res) => {
 
 // Forgot Password - Send OTP
 router.post("/forgot-password", async (req, res) => {
+    console.log("=== FORGOT PASSWORD ROUTE CALLED ===");
     try {
-        console.log("🔐 Forgot password request:", req.body);
+        console.log("🔐 Forgot password request received:", req.body);
         
         const { email } = req.body;
         if (!email) {
+            console.log("❌ No email provided");
             return res.status(400).json({ message: "Email is required" });
         }
 
-        // Check if user exists
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ message: "User with this email does not exist" });
-        }
+        console.log("🔍 Processing OTP request for email:", email);
 
-        console.log("✅ User found:", user.name);
-
-        // Generate OTP
+        // Generate OTP for ANY email (don't check if user exists)
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const resetToken = crypto.randomBytes(32).toString('hex');
         const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
 
-        // Save OTP to user
-        user.resetOTP = otp;
-        user.resetOTPExpires = otpExpires;
-        user.resetToken = resetToken;
+        console.log("🔐 Generated OTP:", otp);
+        console.log("🔑 Generated Token:", resetToken);
+        console.log("⏰ OTP expires at:", otpExpires);
 
-        await user.save();
-        console.log("✅ OTP saved to user");
+        // Check if user exists to get their name, but don't require it
+        let userName = "User";
+        let user = await User.findOne({ email });
+        
+        if (user) {
+            console.log("✅ Existing user found:", user.name);
+            userName = user.name;
+            
+            // Save OTP to existing user
+            user.resetOTP = otp;
+            user.resetOTPExpires = otpExpires;
+            user.resetToken = resetToken;
+            await user.save();
+            console.log("✅ OTP saved to existing user");
+        } else {
+            console.log("ℹ️ No existing user found, but sending OTP anyway");
+            
+            // Create a temporary user record for OTP tracking
+            const tempUser = new User({
+                name: "Temporary User",
+                email: email,
+                password: "temp_password_" + Date.now(), // Temporary password
+                resetOTP: otp,
+                resetOTPExpires: otpExpires,
+                resetToken: resetToken,
+                isTemporary: true // Flag to identify temporary users
+            });
+            
+            try {
+                await tempUser.save();
+                console.log("✅ Temporary user created for OTP tracking");
+            } catch (err) {
+                console.log("⚠️ Could not create temp user (email might exist), continuing anyway");
+            }
+        }
 
-        // Send email with user's name
-        const emailResult = await sendOTPEmail(email, otp, user.name);
+        // Send email to ANY email address
+        console.log("📧 Attempting to send email to:", email);
+        const emailResult = await sendOTPEmail(email, otp, userName);
+        console.log("📧 Email result:", emailResult);
 
         if (emailResult.success) {
+            console.log("✅ Email sent successfully!");
             res.json({ 
                 message: "OTP sent successfully to your email",
                 token: resetToken,
                 emailSent: true
             });
         } else {
-            // Even if email fails, still allow the process to continue
-            // The OTP is logged to console as backup
+            console.log("⚠️ Email sending failed, but OTP generated");
             res.json({ 
                 message: "OTP generated successfully. Check server console for backup code.",
                 token: resetToken,
@@ -281,7 +312,7 @@ router.post("/verify-otp", async (req, res) => {
             return res.status(400).json({ message: "Email, OTP, and token are required" });
         }
 
-        // Find user with matching email and token
+        // Find user with matching email and token (works for both regular and temporary users)
         const user = await User.findOne({ 
             email,
             resetToken: token,
@@ -297,9 +328,12 @@ router.post("/verify-otp", async (req, res) => {
             return res.status(400).json({ message: "Invalid OTP" });
         }
 
-        console.log("✅ OTP verified successfully");
+        console.log("✅ OTP verified successfully for:", email);
         
-        res.json({ message: "OTP verified successfully" });
+        res.json({ 
+            message: "OTP verified successfully",
+            isTemporary: user.isTemporary || false
+        });
 
     } catch (err) {
         console.error("❌ Verify OTP error:", err);
@@ -336,16 +370,30 @@ router.post("/reset-password", async (req, res) => {
         // Hash new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         
-        // Update password and clear reset fields
-        user.password = hashedPassword;
+        if (user.isTemporary) {
+            // Convert temporary user to real user
+            console.log("🔄 Converting temporary user to real user");
+            user.name = "New User"; // Default name, user can change later
+            user.password = hashedPassword;
+            user.isTemporary = false;
+        } else {
+            // Update existing user's password
+            console.log("🔄 Updating existing user's password");
+            user.password = hashedPassword;
+        }
+        
+        // Clear reset fields
         user.resetOTP = null;
         user.resetOTPExpires = null;
         user.resetToken = null;
 
         await user.save();
-        console.log("✅ Password reset successfully");
+        console.log("✅ Password reset successfully for:", email);
 
-        res.json({ message: "Password reset successfully" });
+        res.json({ 
+            message: "Password reset successfully",
+            isNewUser: user.isTemporary === false && user.name === "New User"
+        });
 
     } catch (err) {
         console.error("❌ Reset password error:", err);
