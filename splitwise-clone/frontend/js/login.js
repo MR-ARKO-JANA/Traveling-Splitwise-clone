@@ -98,7 +98,7 @@ async function sendOTP() {
   
   const btn = event.target;
   const originalText = btn.innerHTML;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending OTP...';
   btn.disabled = true;
   
   try {
@@ -118,7 +118,12 @@ async function sendOTP() {
     if (res.ok) {
       currentResetEmail = email;
       currentOTPToken = data.token;
-      showModalMessage('OTP sent successfully! Check your email and server console.', 'success');
+      
+      if (data.emailSent) {
+        showModalMessage('✅ OTP sent successfully to your email! Check your inbox.', 'success');
+      } else {
+        showModalMessage('⚠️ OTP generated but email sending failed. Check server console for backup code.', 'warning');
+      }
       
       // Move to step 2
       setTimeout(() => {
@@ -127,14 +132,14 @@ async function sendOTP() {
         document.getElementById('step1').className = 'step completed';
         document.getElementById('step2').className = 'step active';
         startOTPTimer();
-      }, 1500);
+      }, 2000);
     } else {
       console.error('Server error:', data);
       showModalMessage(data.message || 'Failed to send OTP', 'error');
     }
   } catch (err) {
     console.error('Network error:', err);
-    showModalMessage('Network error. Please check if the server is running.', 'error');
+    showModalMessage('❌ Network error. Please check if the server is running.', 'error');
   } finally {
     btn.innerHTML = originalText;
     btn.disabled = false;

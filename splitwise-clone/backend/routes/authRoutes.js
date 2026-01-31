@@ -10,11 +10,15 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key-change-this-
 
 const nodemailer = require("nodemailer");
 
-// Real email sending function
-async function sendOTPEmail(email, otp) {
+// Professional OTP email sending function
+async function sendOTPEmail(email, otp, userName = "User") {
     try {
-        // Create transporter
-        const transporter = nodemailer.createTransporter({
+        console.log(`📧 Attempting to send OTP email to: ${email}`);
+        console.log(`🔐 Generated OTP: ${otp}`);
+        console.log(`📧 Using email config: ${process.env.MAIL_USER}`);
+        
+        // Create transporter with Gmail
+        const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
                 user: process.env.MAIL_USER,
@@ -22,58 +26,119 @@ async function sendOTPEmail(email, otp) {
             }
         });
 
-        // Email options
+        // Test the connection
+        await transporter.verify();
+        console.log('✅ SMTP connection verified successfully');
+
+        // Professional email template
         const mailOptions = {
-            from: process.env.MAIL_USER,
+            from: `"Splitwise Clone Security" <${process.env.MAIL_USER}>`,
             to: email,
-            subject: '🔐 Password Reset OTP - Splitwise Clone',
+            subject: '🔐 Your Password Reset Code - Splitwise Clone',
             html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
-                    <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 30px; border-radius: 10px; text-align: center; color: white;">
-                        <h1 style="margin: 0; font-size: 28px;">🔐 Password Reset</h1>
-                        <p style="margin: 10px 0 0 0; font-size: 16px;">Splitwise Clone</p>
-                    </div>
-                    
-                    <div style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                        <h2 style="color: #333; margin-top: 0;">Your OTP Code</h2>
-                        <p style="color: #666; font-size: 16px; line-height: 1.5;">
-                            You requested a password reset for your Splitwise Clone account. Use the OTP code below to reset your password:
-                        </p>
-                        
-                        <div style="background: #f8f9fa; border: 2px dashed #667eea; border-radius: 10px; padding: 20px; text-align: center; margin: 20px 0;">
-                            <h1 style="color: #667eea; font-size: 36px; margin: 0; letter-spacing: 5px; font-family: 'Courier New', monospace;">
-                                ${otp}
-                            </h1>
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Password Reset - Splitwise Clone</title>
+                </head>
+                <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+                        <!-- Header -->
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">🔐 Password Reset</h1>
+                            <p style="color: #ffffff; margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Splitwise Clone Security</p>
                         </div>
                         
-                        <p style="color: #666; font-size: 14px; line-height: 1.5;">
-                            <strong>⏰ This OTP will expire in 5 minutes.</strong><br>
-                            If you didn't request this password reset, please ignore this email.
-                        </p>
+                        <!-- Content -->
+                        <div style="padding: 40px 30px;">
+                            <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">Hi ${userName}!</h2>
+                            
+                            <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;">
+                                We received a request to reset your password for your Splitwise Clone account. Use the verification code below to reset your password:
+                            </p>
+                            
+                            <!-- OTP Code Box -->
+                            <div style="background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%); border: 2px solid #667eea; border-radius: 15px; padding: 30px; text-align: center; margin: 30px 0; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);">
+                                <p style="color: #666666; font-size: 14px; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Your Verification Code</p>
+                                <div style="color: #667eea; font-size: 48px; font-weight: bold; letter-spacing: 8px; font-family: 'Courier New', monospace; margin: 15px 0; text-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);">
+                                    ${otp}
+                                </div>
+                                <p style="color: #999999; font-size: 12px; margin: 10px 0 0 0;">⏰ This code expires in 5 minutes</p>
+                            </div>
+                            
+                            <!-- Instructions -->
+                            <div style="background: #fff8e1; border-left: 4px solid #ffc107; padding: 20px; margin: 25px 0; border-radius: 8px;">
+                                <h3 style="color: #f57c00; margin: 0 0 15px 0; font-size: 16px;">⚠️ Security Instructions</h3>
+                                <ul style="color: #666666; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.8;">
+                                    <li>Enter this code on the password reset page</li>
+                                    <li>This code is valid for <strong>5 minutes only</strong></li>
+                                    <li>Never share this code with anyone</li>
+                                    <li>If you didn't request this, please ignore this email</li>
+                                </ul>
+                            </div>
+                            
+                            <!-- Action Button -->
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="#" style="display: inline-block; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                                    🔐 Reset My Password
+                                </a>
+                            </div>
+                            
+                            <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 25px 0 0 0; text-align: center;">
+                                Having trouble? Contact our support team or try requesting a new code.
+                            </p>
+                        </div>
                         
-                        <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px; text-align: center;">
-                            <p style="color: #999; font-size: 12px; margin: 0;">
-                                This is an automated email from Splitwise Clone. Please do not reply to this email.
+                        <!-- Footer -->
+                        <div style="background: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e9ecef;">
+                            <p style="color: #999999; font-size: 12px; margin: 0 0 10px 0;">
+                                This is an automated security message from Splitwise Clone
+                            </p>
+                            <p style="color: #999999; font-size: 12px; margin: 0;">
+                                📧 ${email} | 🕒 ${new Date().toLocaleString()}
+                            </p>
+                            <p style="color: #999999; font-size: 11px; margin: 10px 0 0 0;">
+                                Please do not reply to this email
                             </p>
                         </div>
                     </div>
-                </div>
+                </body>
+                </html>
             `
         };
 
         // Send email
-        await transporter.sendMail(mailOptions);
-        console.log('📧 OTP email sent successfully to:', email);
-        return true;
+        console.log('📧 Sending email...');
+        const info = await transporter.sendMail(mailOptions);
+        
+        console.log(`✅ OTP email sent successfully!`);
+        console.log(`📧 To: ${email}`);
+        console.log(`📧 Message ID: ${info.messageId}`);
+        console.log(`📧 Response: ${info.response}`);
+        
+        return { success: true, messageId: info.messageId };
+        
     } catch (error) {
         console.error('❌ Email sending failed:', error);
-        // Fallback to console logging
-        console.log(`\n📧 ===== OTP EMAIL NOTIFICATION (FALLBACK) =====`);
-        console.log(`📧 Email: ${email}`);
+        console.error('❌ Error details:', {
+            message: error.message,
+            code: error.code,
+            command: error.command
+        });
+        
+        // Enhanced backup logging
+        console.log(`\n🚨 ===== EMAIL SENDING FAILED - BACKUP LOG =====`);
+        console.log(`📧 Recipient: ${email}`);
         console.log(`🔐 OTP Code: ${otp}`);
+        console.log(`⏰ Generated at: ${new Date().toLocaleString()}`);
         console.log(`⏰ Expires in: 5 minutes`);
-        console.log(`=====================================\n`);
-        return false;
+        console.log(`❌ Error: ${error.message}`);
+        console.log(`🔧 Suggestion: Check Gmail App Password and 2FA settings`);
+        console.log(`===============================================\n`);
+        
+        return { success: false, error: error.message };
     }
 }
 
@@ -176,13 +241,25 @@ router.post("/forgot-password", async (req, res) => {
         await user.save();
         console.log("✅ OTP saved to user");
 
-        // Send email
-        await sendOTPEmail(email, otp);
+        // Send email with user's name
+        const emailResult = await sendOTPEmail(email, otp, user.name);
 
-        res.json({ 
-            message: "OTP sent successfully to your email",
-            token: resetToken
-        });
+        if (emailResult.success) {
+            res.json({ 
+                message: "OTP sent successfully to your email",
+                token: resetToken,
+                emailSent: true
+            });
+        } else {
+            // Even if email fails, still allow the process to continue
+            // The OTP is logged to console as backup
+            res.json({ 
+                message: "OTP generated successfully. Check server console for backup code.",
+                token: resetToken,
+                emailSent: false,
+                emailError: emailResult.error
+            });
+        }
 
     } catch (err) {
         console.error("❌ Forgot password error:", err);
