@@ -1,6 +1,5 @@
-// Some variables to keep track of our OTP stuff
 let otpTimer;
-let otpCountdown = 300; // 5 minutes should be plenty
+let otpCountdown = 300;
 let currentResetEmail = '';
 let currentOTPToken = '';
 
@@ -9,8 +8,7 @@ document.getElementById("loginForm").addEventListener("submit", async e => {
   const btn = e.target.querySelector("button");
   const originalText = btn.innerText;
   
-  // Let the user know we're working on it
-  btn.innerText = "Checking...";
+  btn.innerText = "Logging in...";
   btn.disabled = true;
 
   const email = document.getElementById("email").value;
@@ -26,24 +24,20 @@ document.getElementById("loginForm").addEventListener("submit", async e => {
     const data = await res.json();
 
     if (res.ok) {
-      // Sweet! They're in
       localStorage.setItem("token", data.token);
       window.location.href = "dashboard.html";
     } else {
-      showMessage("⚠️ " + (data.message || "Those credentials don't look right"), "error");
+      showMessage(data.message || "Invalid credentials", "error");
       btn.innerText = originalText;
       btn.disabled = false;
     }
   } catch (err) {
-    showMessage("❌ Can't reach the server right now", "error");
+    showMessage("Connection error", "error");
     btn.innerText = originalText;
     btn.disabled = false;
   }
 });
 
-// ================= FORGOT PASSWORD FUNCTIONALITY =================
-
-// Open forgot password modal
 function openForgotPasswordModal() {
   document.getElementById('forgotPasswordModal').style.display = 'block';
   resetModalState();

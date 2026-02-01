@@ -7,7 +7,11 @@ const API_BASE_URL = "http://localhost:5000";
 const API_ENDPOINTS = {
     auth: {
         login: `${API_BASE_URL}/api/auth/login`,
-        register: `${API_BASE_URL}/api/auth/register`
+        signup: `${API_BASE_URL}/api/auth/signup`,
+        register: `${API_BASE_URL}/api/auth/signup`,
+        forgotPassword: `${API_BASE_URL}/api/auth/forgot-password`,
+        verifyOtp: `${API_BASE_URL}/api/auth/verify-otp`,
+        resetPassword: `${API_BASE_URL}/api/auth/reset-password`
     },
     groups: {
         base: `${API_BASE_URL}/api/groups`,

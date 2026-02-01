@@ -1,5 +1,3 @@
-// Enhanced Dashboard with all features
-// Check authentication
 const token = localStorage.getItem("token");
 if (!token) {
     window.location.href = "index.html";
@@ -10,14 +8,12 @@ const headers = {
     "Authorization": `Bearer ${token}`
 };
 
-// Global variables
 let selectedGroupId = null;
 let selectedGroupName = null;
 let currentUser = null;
 let allGroups = [];
 let currentExpenses = [];
 
-// Initialize dashboard
 document.addEventListener('DOMContentLoaded', async function() {
     await loadCurrentUser();
     await refreshDashboard();
@@ -26,31 +22,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     loadRecentActivity();
 });
 
-// Refresh profile picture when window gains focus (user returns from profile page)
 window.addEventListener('focus', function() {
-    // Small delay to ensure any profile changes are saved
     setTimeout(() => {
         loadCurrentUser();
     }, 500);
 });
 
-// Listen for localStorage changes (when profile picture is updated)
-window.addEventListener('storage', function(e) {
-    if (e.key === 'user') {
-        loadCurrentUser();
-    }
-});
-
-// Also listen for custom storage events from same window
-window.addEventListener('storage', function(e) {
-    if (e.key === 'user') {
-        const userData = JSON.parse(e.newValue || '{}');
-        currentUser = userData;
-        updateDashboardProfilePicture();
-    }
-});
-
-// Load current user info
 async function loadCurrentUser() {
     try {
         const stored = localStorage.getItem("user");
@@ -58,7 +35,6 @@ async function loadCurrentUser() {
             currentUser = JSON.parse(stored);
             updateDashboardProfilePicture();
         } else {
-            // If no stored user, fetch from server
             await fetchCurrentUserFromServer();
         }
     } catch (err) {
@@ -67,7 +43,6 @@ async function loadCurrentUser() {
     }
 }
 
-// Fetch current user from server
 async function fetchCurrentUserFromServer() {
     try {
         const res = await fetch("http://localhost:5000/api/profile/passport", { headers });
@@ -82,7 +57,6 @@ async function fetchCurrentUserFromServer() {
     }
 }
 
-// Update profile picture in dashboard
 function updateDashboardProfilePicture() {
     const profilePic = document.getElementById('dashboardProfilePic');
     const defaultIcon = document.getElementById('defaultProfileIcon');
@@ -588,10 +562,16 @@ function renderExpenseItem(expense) {
                 <span style="font-weight: bold; font-size: 20px; color: #fff;">₹${expense.amount}</span>
                 <br>
                 ${isUserPayer ? `
-                    <button onclick="settleExpense('${expense._id}')" 
-                        style="margin-top: 8px; padding: 6px 12px; font-size: 12px; background: linear-gradient(135deg, #00e676, #43cea2); color: white; border: none; border-radius: 15px; cursor: pointer;">
-                        <i class="fas fa-check"></i> Settle
-                    </button>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button onclick="editExpense('${expense._id}')" 
+                            style="padding: 6px 12px; font-size: 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 15px; cursor: pointer;">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button onclick="settleExpense('${expense._id}')" 
+                            style="padding: 6px 12px; font-size: 12px; background: linear-gradient(135deg, #00e676, #43cea2); color: white; border: none; border-radius: 15px; cursor: pointer;">
+                            <i class="fas fa-check"></i> Settle
+                        </button>
+                    </div>
                 ` : `
                     <small style="color: rgba(255,255,255,0.6);">You owe: ₹${splitAmount.toFixed(2)}</small>
                 `}
@@ -690,6 +670,8 @@ async function handleAddExpense() {
     btn.disabled = true;
     
     try {
+        console.log("Adding expense:", { description, amount, groupId: selectedGroupId, category });
+        
         const res = await fetch("http://localhost:5000/api/expenses", {
             method: "POST",
             headers,
@@ -702,15 +684,19 @@ async function handleAddExpense() {
         });
         
         const data = await res.json();
+        console.log("Expense creation response:", data);
         
         if (res.ok) {
             showNotification("Expense added successfully!", "success");
             descInput.value = "";
             amountInput.value = "";
             categorySelect.value = "other";
+            
+            console.log("Refreshing dashboard after expense creation...");
             await refreshDashboard();
             addToActivity(`Added expense: ${description}`, "expense");
         } else {
+            console.error("Expense creation failed:", data);
             showNotification(data.message || "Failed to add expense", "error");
         }
     } catch (err) {
@@ -722,34 +708,77 @@ async function handleAddExpense() {
     }
 }
 
-// Update balance summary
 async function updateBalances() {
     try {
+        console.log("Fetching balance summary...");
         const res = await fetch("http://localhost:5000/api/balance/summary", { headers });
         
         if (!res.ok) {
+            console.error("Balance API failed:", res.status, res.statusText);
             throw new Error(`HTTP error! status: ${res.status}`);
         }
         
         const data = await res.json();
+        console.log("Balance data received:", data);
         
-        document.getElementById("totalGet").textContent = `₹${data.get}`;
-        document.getElementById("totalPay").textContent = `₹${data.pay}`;
-        document.getElementById("totalBalance").textContent = `₹${data.total}`;
-        
-        // Update colors based on balance
+        const getElement = document.getElementById("totalGet");
+        const payElement = document.getElementById("totalPay");
         const totalElement = document.getElementById("totalBalance");
-        const balance = parseFloat(data.total);
-        if (balance > 0) {
-            totalElement.style.color = "#00e676";
-        } else if (balance < 0) {
-            totalElement.style.color = "#ff5252";
+        
+        if (getElement) {
+            getElement.textContent = `₹${data.get}`;
+            console.log("Updated 'You will get' to:", data.get);
+        }
+        if (payElement) {
+            payElement.textContent = `₹${data.pay}`;
+            console.log("Updated 'You will pay' to:", data.pay);
+        }
+        if (totalElement) {
+            totalElement.textContent = `₹${data.total}`;
+            console.log("Updated 'Total balance' to:", data.total);
+        }
+        
+        if (totalElement) {
+            const balance = parseFloat(data.total);
+            if (balance > 0) {
+                totalElement.style.color = "#00e676";
+            } else if (balance < 0) {
+                totalElement.style.color = "#ff5252";
+            } else {
+                totalElement.style.color = "#ffd54f";
+            }
+        }
+        
+        if (parseFloat(data.get) === 0 && parseFloat(data.pay) === 0 && parseFloat(data.total) === 0) {
+            console.log("All balances are zero - showing hint");
+            const balanceCard = document.querySelector('.balance-summary');
+            if (balanceCard && !document.getElementById('noExpensesHint')) {
+                const hint = document.createElement('div');
+                hint.id = 'noExpensesHint';
+                hint.style.cssText = `
+                    background: rgba(255, 193, 7, 0.1);
+                    border: 1px solid rgba(255, 193, 7, 0.3);
+                    border-radius: 10px;
+                    padding: 15px;
+                    margin-top: 15px;
+                    text-align: center;
+                    color: #ffc107;
+                `;
+                hint.innerHTML = `
+                    <i class="fas fa-info-circle"></i>
+                    <strong>No expenses yet!</strong><br>
+                    Create a group and add some expenses to see your balances.
+                `;
+                balanceCard.appendChild(hint);
+            }
         } else {
-            totalElement.style.color = "#ffd54f";
+            console.log("Balances found - removing hint if exists");
+            const hint = document.getElementById('noExpensesHint');
+            if (hint) hint.remove();
         }
     } catch (err) {
         console.error("Error updating balances:", err);
-        // Don't show error for balance update as it's not critical
+        showNotification("Failed to load balances", "error");
     }
 }
 
@@ -979,3 +1008,220 @@ function hideModal(modalId) {
 
 // Initialize dashboard
 refreshDashboard();
+
+// Edit expense functionality
+window.editExpense = async (expenseId) => {
+    const expense = currentExpenses.find(exp => exp._id === expenseId);
+    if (!expense) {
+        showNotification("Expense not found", "error");
+        return;
+    }
+    
+    showEditExpenseModal(expense);
+};
+
+// Show edit expense modal
+function showEditExpenseModal(expense) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('editExpenseModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'editExpenseModal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2><i class="fas fa-edit"></i> Edit Expense</h2>
+                <form id="editExpenseForm">
+                    <div class="form-group">
+                        <label for="editDescription">Description:</label>
+                        <input type="text" id="editDescription" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAmount">Amount (₹):</label>
+                        <input type="number" id="editAmount" step="0.01" min="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editCategory">Category:</label>
+                        <select id="editCategory">
+                            <option value="food">🍽️ Food</option>
+                            <option value="transport">🚗 Transport</option>
+                            <option value="accommodation">🏠 Accommodation</option>
+                            <option value="entertainment">🎬 Entertainment</option>
+                            <option value="utilities">⚡ Utilities</option>
+                            <option value="other">📦 Other</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" onclick="hideModal('editExpenseModal')" class="cancel-btn">Cancel</button>
+                        <button type="submit" class="submit-btn">Update Expense</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        // Add event listeners
+        modal.querySelector('.close').addEventListener('click', () => {
+            hideModal('editExpenseModal');
+        });
+        
+        modal.querySelector('#editExpenseForm').addEventListener('submit', handleEditExpense);
+    }
+    
+    // Populate form with current values
+    document.getElementById('editDescription').value = expense.description;
+    document.getElementById('editAmount').value = expense.amount;
+    document.getElementById('editCategory').value = expense.category || 'other';
+    
+    // Store expense ID for update
+    modal.dataset.expenseId = expense._id;
+    
+    showModal('editExpenseModal');
+}
+
+// Handle edit expense form submission
+async function handleEditExpense(e) {
+    e.preventDefault();
+    
+    const modal = document.getElementById('editExpenseModal');
+    const expenseId = modal.dataset.expenseId;
+    
+    const description = document.getElementById('editDescription').value.trim();
+    const amount = parseFloat(document.getElementById('editAmount').value);
+    const category = document.getElementById('editCategory').value;
+    
+    if (!description || amount <= 0) {
+        showNotification("Please fill all fields correctly", "error");
+        return;
+    }
+    
+    try {
+        const res = await fetch(`http://localhost:5000/api/expenses/${expenseId}`, {
+            method: "PUT",
+            headers,
+            body: JSON.stringify({ description, amount, category })
+        });
+        
+        if (res.ok) {
+            showNotification("Expense updated successfully!", "success");
+            hideModal('editExpenseModal');
+            await loadGroupExpenses(selectedGroupId, selectedGroupName);
+            await updateBalances();
+            addToActivity(`Updated expense: ${description}`, "expense");
+        } else {
+            const data = await res.json();
+            showNotification(data.message || "Failed to update expense", "error");
+        }
+    } catch (err) {
+        console.error("Error updating expense:", err);
+        showNotification("Failed to update expense", "error");
+    }
+}
+
+// Enhanced settle expense with settlement tracking
+window.settleExpense = async (expenseId) => {
+    const expense = currentExpenses.find(exp => exp._id === expenseId);
+    if (!expense) {
+        showNotification("Expense not found", "error");
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to settle "${expense.description}"? This will remove it from the group.`)) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(`http://localhost:5000/api/expenses/${expenseId}`, {
+            method: "DELETE",
+            headers
+        });
+        
+        if (res.ok) {
+            showNotification("Expense settled successfully!", "success");
+            await loadGroupExpenses(selectedGroupId, selectedGroupName);
+            await updateBalances();
+            addToActivity(`Settled expense: ${expense.description}`, "settlement");
+        } else {
+            const data = await res.json();
+            showNotification(data.message || "Failed to settle expense", "error");
+        }
+    } catch (err) {
+        console.error("Error settling expense:", err);
+        showNotification("Failed to settle expense", "error");
+    }
+};
+
+// Add expense history functionality
+async function loadExpenseHistory(page = 1, category = 'all') {
+    try {
+        const params = new URLSearchParams({
+            page: page.toString(),
+            limit: '20'
+        });
+        
+        if (category !== 'all') {
+            params.append('category', category);
+        }
+        
+        const res = await fetch(`http://localhost:5000/api/expenses/history/user?${params}`, { headers });
+        
+        if (res.ok) {
+            const data = await res.json();
+            return data;
+        } else {
+            throw new Error('Failed to load expense history');
+        }
+    } catch (err) {
+        console.error("Error loading expense history:", err);
+        showNotification("Failed to load expense history", "error");
+        return null;
+    }
+}
+
+// Search and filter functionality
+function setupSearchAndFilter() {
+    // Add search input to dashboard if not exists
+    const searchContainer = document.getElementById('searchContainer');
+    if (searchContainer) {
+        searchContainer.innerHTML = `
+            <div class="search-filter-bar">
+                <input type="text" id="expenseSearch" placeholder="Search expenses..." />
+                <select id="categoryFilter">
+                    <option value="all">All Categories</option>
+                    <option value="food">Food</option>
+                    <option value="transport">Transport</option>
+                    <option value="accommodation">Accommodation</option>
+                    <option value="entertainment">Entertainment</option>
+                    <option value="utilities">Utilities</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+        `;
+        
+        // Add event listeners
+        document.getElementById('expenseSearch').addEventListener('input', filterExpenses);
+        document.getElementById('categoryFilter').addEventListener('change', filterExpenses);
+    }
+}
+
+// Filter expenses based on search and category
+function filterExpenses() {
+    const searchTerm = document.getElementById('expenseSearch')?.value.toLowerCase() || '';
+    const categoryFilter = document.getElementById('categoryFilter')?.value || 'all';
+    
+    const expenseItems = document.querySelectorAll('#expenseList li');
+    
+    expenseItems.forEach(item => {
+        const description = item.textContent.toLowerCase();
+        const matchesSearch = description.includes(searchTerm);
+        const expense = currentExpenses.find(exp => description.includes(exp.description.toLowerCase()));
+        const matchesCategory = categoryFilter === 'all' || (expense && expense.category === categoryFilter);
+        
+        if (matchesSearch && matchesCategory) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}

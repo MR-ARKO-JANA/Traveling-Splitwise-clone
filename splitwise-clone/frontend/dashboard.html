@@ -18,14 +18,29 @@
 body {
     min-height: 100vh;
     background: 
+        url('images/20cbf31ecf279ccab1a3264a2cec80c6.jpg') no-repeat center center fixed,
         radial-gradient(circle at 20% 50%, rgba(0, 243, 255, 0.15) 0%, transparent 50%),
         radial-gradient(circle at 80% 20%, rgba(255, 0, 255, 0.15) 0%, transparent 50%),
         radial-gradient(circle at 40% 80%, rgba(0, 255, 157, 0.15) 0%, transparent 50%),
         linear-gradient(135deg, #0a0a14 0%, #1a1a2e 50%, #16213e 100%);
+    background-size: cover, auto, auto, auto, auto;
     animation: bgMove 12s infinite alternate;
     color: #fff;
     position: relative;
     overflow-x: hidden;
+}
+
+/* Add overlay for better readability */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: -1;
+    pointer-events: none;
 }
 
 @keyframes bgMove {
@@ -647,6 +662,9 @@ body {
       </button>
       <button onclick="window.location.href='groups.html'" style="background: linear-gradient(135deg, #667eea, #764ba2);">
         <i class="fas fa-users"></i> Manage Groups
+      </button>
+      <button onclick="window.location.href='analytics.html'" style="background: linear-gradient(135deg, #9c27b0, #e91e63);">
+        <i class="fas fa-chart-line"></i> View Analytics
       </button>
       <button id="exportDataBtn" style="background: linear-gradient(135deg, #2196f3, #21cbf3);">
         <i class="fas fa-download"></i> Export Data
