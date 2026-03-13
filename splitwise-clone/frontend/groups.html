@@ -510,6 +510,7 @@
 </div>
 
 <script src="js/config.js"></script>
+<script src="js/api.js"></script>
 <script>
 // Check authentication
 const token = localStorage.getItem("token");
@@ -528,14 +529,13 @@ let selectedGroupId = null;
 // Load groups
 async function loadGroups() {
     try {
-        const res = await fetch("http://localhost:5000/api/groups", { headers });
-        const groups = await res.json();
+        const groups = await api.groups.getAll();
         currentGroups = groups;
         
         renderGroups(groups);
     } catch (err) {
         console.error("Error loading groups:", err);
-        showNotification("Failed to load groups", "error");
+        showNotification(err.message || "Failed to load groups", "error");
     }
 }
 
@@ -665,35 +665,21 @@ async function createGroup() {
     }
     
     try {
-        const res = await fetch("http://localhost:5000/api/groups", {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-                name,
-                description,
-                emails: memberEmails
-            })
-        });
+        const data = await api.groups.create(name, description, memberEmails);
         
-        const data = await res.json();
+        showNotification(`Group "${name}" created successfully!`, 'success');
+        hideModal('createGroupModal');
         
-        if (res.ok) {
-            showNotification(`Group "${name}" created successfully!`, 'success');
-            hideModal('createGroupModal');
-            
-            // Clear form
-            document.getElementById('groupName').value = '';
-            document.getElementById('groupDescription').value = '';
-            document.getElementById('memberEmails').value = '';
-            
-            // Reload groups
-            loadGroups();
-        } else {
-            showNotification(data.message || 'Failed to create group', 'error');
-        }
+        // Clear form
+        document.getElementById('groupName').value = '';
+        document.getElementById('groupDescription').value = '';
+        document.getElementById('memberEmails').value = '';
+        
+        // Reload groups
+        loadGroups();
     } catch (err) {
         console.error('Create group error:', err);
-        showNotification('Failed to create group', 'error');
+        showNotification(err.message || 'Failed to create group', 'error');
     }
 }
 
@@ -775,28 +761,15 @@ async function addMember() {
     }
     
     try {
-        const res = await fetch("http://localhost:5000/api/groups/add-member", {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-                groupId: selectedGroupId,
-                email
-            })
-        });
+        const data = await api.groups.addMember(selectedGroupId, email);
         
-        const data = await res.json();
-        
-        if (res.ok) {
-            showNotification('Member added successfully!', 'success');
-            hideModal('addMemberModal');
-            document.getElementById('newMemberEmail').value = '';
-            loadGroups();
-        } else {
-            showNotification(data.message || 'Failed to add member', 'error');
-        }
+        showNotification('Member added successfully!', 'success');
+        hideModal('addMemberModal');
+        document.getElementById('newMemberEmail').value = '';
+        loadGroups();
     } catch (err) {
         console.error('Add member error:', err);
-        showNotification('Failed to add member', 'error');
+        showNotification(err.message || 'Failed to add member', 'error');
     }
 }
 

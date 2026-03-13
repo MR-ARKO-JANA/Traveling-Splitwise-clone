@@ -45,13 +45,10 @@ async function loadCurrentUser() {
 
 async function fetchCurrentUserFromServer() {
     try {
-        const res = await fetch("http://localhost:5000/api/profile/passport", { headers });
-        if (res.ok) {
-            const data = await res.json();
-            currentUser = data.user;
-            localStorage.setItem("user", JSON.stringify(currentUser));
-            updateDashboardProfilePicture();
-        }
+        const data = await api.profile.getPassport();
+        currentUser = data.user;
+        localStorage.setItem("user", JSON.stringify(currentUser));
+        updateDashboardProfilePicture();
     } catch (err) {
         console.error("Error fetching user from server:", err);
     }
@@ -203,13 +200,8 @@ async function refreshDashboard() {
 // Load and display groups
 async function loadGroups() {
     try {
-        const res = await fetch("http://localhost:5000/api/groups", { headers });
-        
-        if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        
-        const groups = await res.json();
+        const res = await api.groups.getAll();
+        const groups = res;
         allGroups = groups;
         const list = document.getElementById("groupList");
         const noGroupsMsg = document.getElementById("noGroupsMessage");
@@ -352,16 +344,11 @@ window.deleteGroup = async (e, groupId, groupName) => {
     }
 
     try {
-        const res = await fetch(`http://localhost:5000/api/groups/${groupId}`, {
-            method: "DELETE",
-            headers
-        });
+        const res = await api.groups.delete(groupId);
         
-        if (res.ok) {
-            const data = await res.json();
-            showNotification(`Group "${groupName}" deleted successfully!`, "success");
-            
-            // Clear selection if deleted group was selected
+        showNotification(`Group "${groupName}" deleted successfully!`, "success");
+        
+        // Clear selection if deleted group was selected
             if (selectedGroupId === groupId) {
                 selectedGroupId = null;
                 selectedGroupName = null;
@@ -371,10 +358,6 @@ window.deleteGroup = async (e, groupId, groupName) => {
             
             await refreshDashboard();
             addToActivity(`Deleted group: ${groupName}`, "group");
-        } else {
-            const errorData = await res.json().catch(() => ({ message: "Failed to delete group" }));
-            showNotification(errorData.message || "Failed to delete group", "error");
-        }
     } catch (err) {
         console.error("Delete group error:", err);
         showNotification("Network error. Please check your connection and try again.", "error");
@@ -394,23 +377,13 @@ window.inviteMember = async (e, groupId) => {
     }
 
     try {
-        const res = await fetch("http://localhost:5000/api/groups/add-member", {
-            method: "POST",
-            headers,
-            body: JSON.stringify({ groupId, email: email.trim() })
-        });
+        const data = await api.groups.addMember(groupId, email.trim());
 
-        const data = await res.json();
-        
-        if (res.ok) {
-            showNotification("Member added successfully!", "success");
-            await refreshDashboard();
-        } else {
-            showNotification(data.message || "Failed to add member", "error");
-        }
+        showNotification("Member added successfully!", "success");
+        await refreshDashboard();
     } catch (err) {
         console.error("Add member error:", err);
-        showNotification("Failed to add member. Please try again.", "error");
+        showNotification(err.message || "Failed to add member. Please try again.", "error");
     }
 };
 
@@ -455,33 +428,19 @@ async function handleCreateGroup() {
     btn.disabled = true;
 
     try {
-        const res = await fetch("http://localhost:5000/api/groups", {
-            method: "POST",
-            headers,
-            body: JSON.stringify({ 
-                name, 
-                description,
-                emails: memberEmails 
-            }) 
-        });
-
-        const data = await res.json();
+        const data = await api.groups.create(name, description, memberEmails);
         
-        if (res.ok) {
-            showNotification(`Group "${name}" created with ${memberEmails.length + 1} members!`, "success");
-            
-            // Clear form
-            nameInput.value = "";
-            membersInput.value = "";
-            descInput.value = "";
-            
-            await refreshDashboard();
-        } else {
-            showNotification(data.message || "Failed to create group", "error");
-        }
+        showNotification(`Group "${name}" created with ${memberEmails.length + 1} members!`, "success");
+        
+        // Clear form
+        nameInput.value = "";
+        membersInput.value = "";
+        descInput.value = "";
+        
+        await refreshDashboard();
     } catch (err) {
         console.error("Group creation error:", err);
-        showNotification("Failed to create group. Please try again.", "error");
+        showNotification(err.message || "Failed to create group. Please try again.", "error");
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
@@ -491,13 +450,7 @@ async function handleCreateGroup() {
 // Load expenses for a group
 async function loadGroupExpenses(groupId, groupName) {
     try {
-        const res = await fetch(`http://localhost:5000/api/expenses/${groupId}`, { headers });
-        
-        if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        
-        const expenses = await res.json();
+        const expenses = await api.expenses.getByGroup(groupId);
         currentExpenses = expenses;
         
         const expenseList = document.getElementById("expenseList");
@@ -611,23 +564,14 @@ window.settleExpense = async (expenseId) => {
     }
 
     try {
-        const res = await fetch(`http://localhost:5000/api/expenses/${expenseId}`, {
-            method: "DELETE",
-            headers
-        });
-
-        const data = await res.json();
+        const data = await api.expenses.delete(expenseId);
         
-        if (res.ok) {
-            showNotification("Expense settled successfully!", "success");
-            await refreshDashboard();
-            addToActivity("Settled an expense", "settlement");
-        } else {
-            showNotification(data.message || "Failed to settle expense", "error");
-        }
+        showNotification("Expense settled successfully!", "success");
+        await refreshDashboard();
+        addToActivity("Settled an expense", "settlement");
     } catch (err) {
         console.error("Settle expense error:", err);
-        showNotification("Failed to settle expense. Please try again.", "error");
+        showNotification(err.message || "Failed to settle expense. Please try again.", "error");
     }
 };
 
@@ -641,10 +585,14 @@ async function handleAddExpense() {
     const descInput = document.getElementById("description");
     const amountInput = document.getElementById("amount");
     const categorySelect = document.getElementById("category");
+    const splitTypeSelect = document.getElementById("splitType");
+    const notesInput = document.getElementById("expenseNotes");
     
     const description = descInput.value.trim();
     const amount = parseFloat(amountInput.value);
     const category = categorySelect.value;
+    const splitType = splitTypeSelect ? splitTypeSelect.value : "equal";
+    const notes = notesInput ? notesInput.value.trim() : "";
     
     if (!description) {
         showNotification("Please enter a description", "error");
@@ -670,38 +618,31 @@ async function handleAddExpense() {
     btn.disabled = true;
     
     try {
-        console.log("Adding expense:", { description, amount, groupId: selectedGroupId, category });
+        console.log("Adding expense:", { description, amount, groupId: selectedGroupId, category, splitType });
         
-        const res = await fetch("http://localhost:5000/api/expenses", {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-                description,
-                amount,
-                groupId: selectedGroupId,
-                category
-            })
+        const data = await api.expenses.create({
+            description,
+            amount,
+            groupId: selectedGroupId,
+            category,
+            splitType,
+            notes
         });
-        
-        const data = await res.json();
         console.log("Expense creation response:", data);
         
-        if (res.ok) {
-            showNotification("Expense added successfully!", "success");
-            descInput.value = "";
-            amountInput.value = "";
-            categorySelect.value = "other";
-            
-            console.log("Refreshing dashboard after expense creation...");
-            await refreshDashboard();
-            addToActivity(`Added expense: ${description}`, "expense");
-        } else {
-            console.error("Expense creation failed:", data);
-            showNotification(data.message || "Failed to add expense", "error");
-        }
+        showNotification("Expense added successfully!", "success");
+        descInput.value = "";
+        amountInput.value = "";
+        categorySelect.value = "other";
+        if (splitTypeSelect) splitTypeSelect.value = "equal";
+        if (notesInput) notesInput.value = "";
+        
+        console.log("Refreshing dashboard after expense creation...");
+        await refreshDashboard();
+        addToActivity(`Added expense: ${description}`, "expense");
     } catch (err) {
         console.error("Add expense error:", err);
-        showNotification("Failed to add expense. Please try again.", "error");
+        showNotification(err.message || "Failed to add expense. Please try again.", "error");
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
@@ -711,14 +652,7 @@ async function handleAddExpense() {
 async function updateBalances() {
     try {
         console.log("Fetching balance summary...");
-        const res = await fetch("http://localhost:5000/api/balance/summary", { headers });
-        
-        if (!res.ok) {
-            console.error("Balance API failed:", res.status, res.statusText);
-            throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        
-        const data = await res.json();
+        const data = await api.balances.getSummary();
         console.log("Balance data received:", data);
         
         const getElement = document.getElementById("totalGet");

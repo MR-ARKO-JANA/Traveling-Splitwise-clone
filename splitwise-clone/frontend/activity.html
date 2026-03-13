@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Activity Timeline - Splitwise</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
+
+body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0a0a14 0%, #1a1a2e 50%, #16213e 100%);
+    color: #fff;
+}
+
+.topbar {
+    height: 70px;
+    padding: 0 30px;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(14px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.topbar h1 {
+    font-size: 24px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.back-btn {
+    padding: 10px 20px;
+    border-radius: 25px;
+    border: none;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.back-btn:hover {
+    background: rgba(255,255,255,0.25);
+    transform: translateX(-3px);
+}
+
+.container {
+    max-width: 800px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 40px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #667eea, #764ba2, #43cea2);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 25px;
+    padding: 20px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    transition: 0.3s ease;
+    animation: fadeInUp 0.4s ease forwards;
+}
+
+.timeline-item:hover {
+    transform: translateX(5px);
+    background: rgba(255,255,255,0.12);
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -33px;
+    top: 24px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #667eea;
+    border: 2px solid #fff;
+    box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+}
+
+.timeline-item.expense_added::before { background: #00e676; }
+.timeline-item.expense_deleted::before { background: #ff5252; }
+.timeline-item.group_created::before { background: #667eea; }
+.timeline-item.member_added::before { background: #ffd54f; }
+.timeline-item.settlement_made::before { background: #43cea2; }
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.timeline-header .user-name {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.timeline-header .time-ago {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+}
+
+.timeline-body {
+    color: rgba(255,255,255,0.85);
+    font-size: 14px;
+}
+
+.timeline-group {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(102, 126, 234, 0.2);
+    font-size: 11px;
+    margin-top: 8px;
+    color: #667eea;
+}
+
+.load-more-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border-radius: 30px;
+    border: none;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+    margin-top: 20px;
+}
+
+.load-more-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 10px 30px rgba(118, 75, 162, 0.5);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255,255,255,0.5);
+}
+
+.empty-state i {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.3;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+    .container { padding: 0 15px; }
+    .timeline { padding-left: 30px; }
+    .timeline::before { left: 10px; }
+    .timeline-item::before { left: -28px; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+    <h1><i class="fas fa-stream"></i> Activity Timeline</h1>
+    <button class="back-btn" onclick="window.location.href='dashboard.html'">
+        <i class="fas fa-arrow-left"></i> Dashboard
+    </button>
+</header>
+
+<div class="container">
+    <div class="timeline" id="timeline"></div>
+    <div id="emptyState" class="empty-state" style="display: none;">
+        <i class="fas fa-stream"></i>
+        <h3>No activity yet</h3>
+        <p>Start adding expenses and creating groups to see your timeline</p>
+    </div>
+    <button class="load-more-btn" id="loadMoreBtn" style="display: none;" onclick="loadMore()">
+        Load More
+    </button>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "index.html";
+
+let currentPage = 1;
+const LIMIT = 20;
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadActivities();
+});
+
+async function loadActivities() {
+    try {
+        const data = await api.activity.getFeed(currentPage, LIMIT);
+        const timeline = document.getElementById("timeline");
+        const emptyState = document.getElementById("emptyState");
+        const loadMoreBtn = document.getElementById("loadMoreBtn");
+
+        if (data.activities.length === 0 && currentPage === 1) {
+            emptyState.style.display = "block";
+            return;
+        }
+
+        emptyState.style.display = "none";
+
+        data.activities.forEach((activity, index) => {
+            const item = document.createElement("div");
+            item.className = `timeline-item ${activity.type}`;
+            item.style.animationDelay = `${index * 0.05}s`;
+
+            const timeAgo = getTimeAgo(new Date(activity.createdAt));
+            const icon = getActivityIcon(activity.type);
+            const userName = activity.user?.name || "Someone";
+            const groupName = activity.group?.name || "";
+
+            item.innerHTML = `
+                <div class="timeline-header">
+                    <span class="user-name">${icon} ${escapeHtml(userName)}</span>
+                    <span class="time-ago">${timeAgo}</span>
+                </div>
+                <div class="timeline-body">${escapeHtml(activity.description)}</div>
+                ${groupName ? `<span class="timeline-group"><i class="fas fa-users"></i> ${escapeHtml(groupName)}</span>` : ''}
+            `;
+            timeline.appendChild(item);
+        });
+
+        loadMoreBtn.style.display = data.currentPage < data.totalPages ? "block" : "none";
+    } catch (err) {
+        console.error("Error loading activities:", err);
+    }
+}
+
+function loadMore() {
+    currentPage++;
+    loadActivities();
+}
+
+function getActivityIcon(type) {
+    const icons = {
+        expense_added: "💰",
+        expense_edited: "✏️",
+        expense_deleted: "🗑️",
+        group_created: "👥",
+        group_deleted: "❌",
+        member_added: "➕",
+        member_removed: "➖",
+        settlement_made: "✅"
+    };
+    return icons[type] || "📋";
+}
+
+function getTimeAgo(date) {
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000);
+    if (diff < 60) return "just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+    return date.toLocaleDateString();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+</body>
+</html>

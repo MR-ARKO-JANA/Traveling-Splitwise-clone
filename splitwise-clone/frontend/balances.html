@@ -287,6 +287,21 @@
         </div>
     </div>
 
+    <!-- Simplify Debts Section -->
+    <div class="balance-breakdown" id="simplifySection">
+        <h2><i class="fas fa-magic"></i> Simplify Debts</h2>
+        <p style="color: rgba(255,255,255,0.7); margin-bottom: 15px; font-size: 14px;">Minimize the number of payments needed to settle up within a group</p>
+        <select id="simplifyGroupSelect" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; margin-bottom: 15px; font-size: 14px;">
+            <option value="">Select a group...</option>
+        </select>
+        <div id="simplifiedDebts">
+            <div style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">
+                <i class="fas fa-hand-holding-usd" style="font-size: 40px; margin-bottom: 10px; opacity: 0.3;"></i>
+                <p>Select a group to simplify debts</p>
+            </div>
+        </div>
+    </div>
+
     <div class="expense-history">
         <h2><i class="fas fa-history"></i> Recent Transactions</h2>
         <div id="recentTransactions">
@@ -299,6 +314,7 @@
 </div>
 
 <script src="js/config.js"></script>
+<script src="js/api.js"></script>
 <script>
 // Check authentication
 const token = localStorage.getItem("token");
@@ -306,33 +322,21 @@ if (!token) {
     window.location.href = "index.html";
 }
 
-const headers = {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${token}`
-};
-
 // Load balance details
 async function loadBalanceDetails() {
     try {
-        // Load summary
-        const summaryRes = await fetch("http://localhost:5000/api/balance/summary", { headers });
-        const summary = await summaryRes.json();
+        const summary = await api.balances.getSummary();
         
         document.getElementById("totalOwed").textContent = `₹${summary.get}`;
         document.getElementById("totalOwe").textContent = `₹${summary.pay}`;
         document.getElementById("netBalance").textContent = `₹${summary.total}`;
         
-        // Update card classes based on amounts
         const netAmount = parseFloat(summary.total);
         const netCard = document.querySelector('.balance-detail-card.neutral');
         netCard.className = `balance-detail-card ${netAmount > 0 ? 'positive' : netAmount < 0 ? 'negative' : 'neutral'}`;
         
-        // Load detailed breakdown
-        const detailsRes = await fetch("http://localhost:5000/api/balance/details", { headers });
-        const details = await detailsRes.json();
-        
+        const details = await api.balances.getDetails();
         renderPersonBalances(details);
-        
     } catch (err) {
         console.error("Error loading balance details:", err);
         document.getElementById("personBalances").innerHTML = `
@@ -341,6 +345,69 @@ async function loadBalanceDetails() {
                 <p>Failed to load balance details</p>
             </div>
         `;
+    }
+}
+
+// Load groups for simplify debts dropdown
+async function loadGroupsForSimplify() {
+    try {
+        const groups = await api.groups.getAll();
+        const select = document.getElementById('simplifyGroupSelect');
+        groups.forEach(group => {
+            const option = document.createElement('option');
+            option.value = group._id;
+            option.textContent = group.name;
+            select.appendChild(option);
+        });
+        
+        select.addEventListener('change', async (e) => {
+            if (e.target.value) {
+                await loadSimplifiedDebts(e.target.value);
+            }
+        });
+    } catch (err) {
+        console.error("Error loading groups:", err);
+    }
+}
+
+// Load simplified debts for a group
+async function loadSimplifiedDebts(groupId) {
+    const container = document.getElementById('simplifiedDebts');
+    container.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin"></i> Calculating...</div>';
+    
+    try {
+        const data = await api.balances.simplifyDebts(groupId);
+        
+        if (data.simplifiedTransactions.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 30px;">
+                    <i class="fas fa-check-circle" style="font-size: 48px; color: #00e676; margin-bottom: 10px;"></i>
+                    <h3>All settled up!</h3>
+                    <p>No payments needed in this group.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = `
+            <div style="padding: 10px; background: rgba(102, 126, 234, 0.15); border-radius: 12px; margin-bottom: 15px; text-align: center;">
+                <strong>✨ Only ${data.transactionCount} payment${data.transactionCount > 1 ? 's' : ''} needed</strong>
+                <span style="color: rgba(255,255,255,0.6);"> (instead of tracking individual expenses)</span>
+            </div>
+            ${data.simplifiedTransactions.map(t => `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 10px; border-left: 3px solid #667eea;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-weight: 600; color: #ff5252;">${escapeHtml(t.from.name)}</span>
+                        <i class="fas fa-long-arrow-alt-right" style="color: #667eea;"></i>
+                        <span style="font-weight: 600; color: #00e676;">${escapeHtml(t.to.name)}</span>
+                    </div>
+                    <span style="font-size: 18px; font-weight: 700; color: #ffd54f;">₹${t.amount.toFixed(2)}</span>
+                </div>
+            `).join('')}
+        `;
+    } catch (err) {
+        console.error("Error simplifying debts:", err);
+        container.innerHTML = '<div style="text-align: center; color: #ff5252; padding: 20px;">Failed to calculate simplified debts</div>';
     }
 }
 
@@ -406,12 +473,10 @@ function renderPersonBalances(details) {
 // Load recent transactions
 async function loadRecentTransactions() {
     try {
-        const res = await fetch("http://localhost:5000/api/profile/activity", { headers });
-        const data = await res.json();
-        
+        const data = await api.expenses.getHistory(1, 10);
         const container = document.getElementById("recentTransactions");
         
-        if (!data.recentExpenses || data.recentExpenses.length === 0) {
+        if (!data.expenses || data.expenses.length === 0) {
             container.innerHTML = `
                 <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 40px;">
                     <i class="fas fa-receipt" style="font-size: 48px; margin-bottom: 15px; opacity: 0.3;"></i>
@@ -424,7 +489,7 @@ async function loadRecentTransactions() {
         
         container.innerHTML = "";
         
-        data.recentExpenses.slice(0, 10).forEach(expense => {
+        data.expenses.forEach(expense => {
             const expenseDiv = document.createElement('div');
             expenseDiv.className = 'expense-item';
             
@@ -443,7 +508,7 @@ async function loadRecentTransactions() {
                             ${formatDate(expense.createdAt)}
                         </p>
                         <small style="color: rgba(255,255,255,0.5);">
-                            Split among ${expense.splitWith?.length || 0} people
+                            ${expense.splitType || 'equal'} split among ${expense.splitWith?.length || 0} people
                         </small>
                     </div>
                 </div>
@@ -457,7 +522,6 @@ async function loadRecentTransactions() {
             
             container.appendChild(expenseDiv);
         });
-        
     } catch (err) {
         console.error("Error loading transactions:", err);
         document.getElementById("recentTransactions").innerHTML = `
@@ -472,24 +536,7 @@ async function loadRecentTransactions() {
 // Request settlement
 async function requestSettlement(personId, personName, amount) {
     if (confirm(`Send a settlement request to ${personName} for ₹${amount.toFixed(2)}?`)) {
-        try {
-            // For now, we'll just show a success message
-            // In a real app, this would send a notification/email
-            showNotification(`Settlement request sent to ${personName}!`, "success");
-            
-            // Add to activity log
-            const activities = JSON.parse(localStorage.getItem('recentActivities') || '[]');
-            activities.unshift({
-                description: `Requested ₹${amount.toFixed(2)} from ${personName}`,
-                type: 'settlement',
-                timestamp: new Date().toISOString()
-            });
-            localStorage.setItem('recentActivities', JSON.stringify(activities.slice(0, 50)));
-            
-        } catch (err) {
-            console.error("Settlement request error:", err);
-            showNotification("Failed to send settlement request", "error");
-        }
+        showNotification(`Settlement request sent to ${personName}!`, "success");
     }
 }
 
@@ -497,92 +544,45 @@ async function requestSettlement(personId, personName, amount) {
 async function settleDebt(personId, personName, amount) {
     if (confirm(`Mark your debt of ₹${amount.toFixed(2)} to ${personName} as settled?`)) {
         try {
-            // For now, we'll simulate settling the debt
-            // In a real app, this would create a settlement record
-            showNotification(`Debt of ₹${amount.toFixed(2)} to ${personName} marked as settled!`, "success");
-            
-            // Add to activity log
-            const activities = JSON.parse(localStorage.getItem('recentActivities') || '[]');
-            activities.unshift({
-                description: `Settled ₹${amount.toFixed(2)} debt to ${personName}`,
-                type: 'settlement',
-                timestamp: new Date().toISOString()
-            });
-            localStorage.setItem('recentActivities', JSON.stringify(activities.slice(0, 50)));
-            
-            // Refresh the balance data
-            setTimeout(() => {
-                loadBalanceDetails();
-            }, 1000);
-            
+            await api.balances.settle(personId, amount);
+            showNotification(`Debt of ₹${amount.toFixed(2)} to ${personName} settled!`, "success");
+            loadBalanceDetails();
         } catch (err) {
             console.error("Settlement error:", err);
-            showNotification("Failed to record settlement", "error");
+            showNotification(err.message || "Failed to record settlement", "error");
         }
     }
 }
 
-// Add notification function
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        border-radius: 10px;
-        z-index: 10000;
-        font-weight: 500;
+        position: fixed; top: 20px; right: 20px;
+        padding: 15px 20px; border-radius: 10px;
+        z-index: 10000; font-weight: 500;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-        animation: slideIn 0.3s ease;
-        color: white;
-        max-width: 300px;
+        animation: slideIn 0.3s ease; color: white; max-width: 300px;
     `;
-    
-    if (type === 'success') {
-        notification.style.background = 'linear-gradient(135deg, #00e676, #43cea2)';
-    } else if (type === 'error') {
-        notification.style.background = 'linear-gradient(135deg, #ff5252, #dd2476)';
-    } else {
-        notification.style.background = 'linear-gradient(135deg, #2196f3, #21cbf3)';
-    }
-    
-    notification.innerHTML = `
-        <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
-        ${message}
-    `;
-    
+    notification.style.background = type === 'success'
+        ? 'linear-gradient(135deg, #00e676, #43cea2)'
+        : type === 'error'
+        ? 'linear-gradient(135deg, #ff5252, #dd2476)'
+        : 'linear-gradient(135deg, #2196f3, #21cbf3)';
+    notification.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i> ${message}`;
     document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 4000);
+    setTimeout(() => notification.remove(), 4000);
 }
 
-// Add CSS for slide in animation
 const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-`;
+style.textContent = `@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`;
 document.head.appendChild(style);
 
-// Utility functions
 function getCategoryIcon(category) {
     const icons = {
-        food: 'fas fa-utensils',
-        transport: 'fas fa-car',
-        accommodation: 'fas fa-bed',
-        entertainment: 'fas fa-film',
-        utilities: 'fas fa-bolt',
+        food: 'fas fa-utensils', transport: 'fas fa-car',
+        accommodation: 'fas fa-bed', entertainment: 'fas fa-film',
+        utilities: 'fas fa-bolt', shopping: 'fas fa-shopping-bag',
+        health: 'fas fa-heartbeat', education: 'fas fa-graduation-cap',
         other: 'fas fa-receipt'
     };
     return icons[category] || icons.other;
@@ -591,13 +591,10 @@ function getCategoryIcon(category) {
 function formatDate(dateString) {
     const date = new Date(dateString);
     const now = new Date();
-    const diffMs = now - date;
-    const diffDays = Math.floor(diffMs / 86400000);
-    
+    const diffDays = Math.floor((now - date) / 86400000);
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return `${diffDays} days ago`;
-    
     return date.toLocaleDateString();
 }
 
@@ -611,6 +608,7 @@ function escapeHtml(text) {
 document.addEventListener('DOMContentLoaded', function() {
     loadBalanceDetails();
     loadRecentTransactions();
+    loadGroupsForSimplify();
 });
 </script>
 

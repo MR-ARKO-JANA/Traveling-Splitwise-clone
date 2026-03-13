@@ -28,12 +28,9 @@ async function loadCurrentUser() {
         if (stored) {
             currentUser = JSON.parse(stored);
         } else {
-            const res = await fetch("http://localhost:5000/api/profile/passport", { headers });
-            if (res.ok) {
-                const data = await res.json();
-                currentUser = data.user;
-                localStorage.setItem("user", JSON.stringify(currentUser));
-            }
+            const data = await api.profile.getPassport();
+            currentUser = data.user;
+            localStorage.setItem("user", JSON.stringify(currentUser));
         }
     } catch (err) {
         console.error("Error loading user:", err);
@@ -43,14 +40,8 @@ async function loadCurrentUser() {
 // Load balance summary
 async function loadBalanceSummary() {
     try {
-        const res = await fetch("http://localhost:5000/api/balance/summary", { headers });
-        
-        if (res.ok) {
-            const data = await res.json();
-            updateBalanceSummaryCards(data);
-        } else {
-            throw new Error('Failed to load balance summary');
-        }
+        const data = await api.balances.getSummary();
+        updateBalanceSummaryCards(data);
     } catch (err) {
         console.error("Error loading balance summary:", err);
         showNotification("Failed to load balance summary", "error");
@@ -75,15 +66,9 @@ function updateBalanceSummaryCards(data) {
 // Load detailed balance breakdown
 async function loadBalanceDetails() {
     try {
-        const res = await fetch("http://localhost:5000/api/balance/details", { headers });
-        
-        if (res.ok) {
-            const data = await res.json();
-            balanceDetails = data;
-            displayBalanceBreakdown(data);
-        } else {
-            throw new Error('Failed to load balance details');
-        }
+        const data = await api.balances.getDetails();
+        balanceDetails = data;
+        displayBalanceBreakdown(data);
     } catch (err) {
         console.error("Error loading balance details:", err);
         showNotification("Failed to load balance details", "error");
@@ -177,25 +162,12 @@ window.settleBalance = async (userId, amount) => {
     if (!confirmed) return;
     
     try {
-        const res = await fetch("http://localhost:5000/api/balance/settle", {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-                withUserId: userId,
-                amount: parseFloat(amount),
-                note: `Settlement with ${balance.name}`
-            })
-        });
+        const data = await api.balances.settle(userId, amount);
         
-        if (res.ok) {
-            showNotification(`Successfully settled ₹${amount} with ${balance.name}!`, "success");
-            await loadBalanceSummary();
-            await loadBalanceDetails();
-            await loadSettlementHistory();
-        } else {
-            const data = await res.json();
-            showNotification(data.message || "Failed to record settlement", "error");
-        }
+        showNotification(`Successfully settled ₹${amount} with ${balance.name}!`, "success");
+        await loadBalanceSummary();
+        await loadBalanceDetails();
+        await loadSettlementHistory();
     } catch (err) {
         console.error("Error settling balance:", err);
         showNotification("Failed to record settlement", "error");
@@ -271,12 +243,8 @@ function showTransactionHistoryModal(balance) {
 // Load settlement history
 async function loadSettlementHistory() {
     try {
-        const res = await fetch("http://localhost:5000/api/balance/settlements", { headers });
-        
-        if (res.ok) {
-            const settlements = await res.json();
-            displaySettlementHistory(settlements);
-        }
+        const settlements = await api.balances.getSettlements();
+        displaySettlementHistory(settlements);
     } catch (err) {
         console.error("Error loading settlement history:", err);
     }

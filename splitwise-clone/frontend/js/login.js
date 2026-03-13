@@ -15,24 +15,11 @@ document.getElementById("loginForm").addEventListener("submit", async e => {
   const password = document.getElementById("password").value;
 
   try {
-    const res = await fetch("http://localhost:5000/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      localStorage.setItem("token", data.token);
-      window.location.href = "dashboard.html";
-    } else {
-      showMessage(data.message || "Invalid credentials", "error");
-      btn.innerText = originalText;
-      btn.disabled = false;
-    }
+    const data = await api.auth.login(email, password);
+    localStorage.setItem("token", data.token);
+    window.location.href = "dashboard.html";
   } catch (err) {
-    showMessage("Connection error", "error");
+    showMessage(err.message || "Connection error", "error");
     btn.innerText = originalText;
     btn.disabled = false;
   }
@@ -99,42 +86,29 @@ async function sendOTP() {
   try {
     console.log('Sending OTP to:', email);
     
-    const res = await fetch('http://localhost:5000/api/auth/forgot-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-    
-    console.log('Server says:', res.status);
-    
-    const data = await res.json();
+    const data = await api.auth.forgotPassword(email);
     console.log('Got back:', data);
     
-    if (res.ok) {
-      currentResetEmail = email;
-      currentOTPToken = data.token;
-      
-      if (data.emailSent) {
-        showModalMessage('✅ Code sent! Check your email inbox', 'success');
-      } else {
-        showModalMessage('⚠️ Code generated but email had issues. Check the server console for your code.', 'warning');
-      }
-      
-      // Move to the next step
-      setTimeout(() => {
-        document.getElementById('emailStep').style.display = 'none';
-        document.getElementById('otpStep').style.display = 'block';
-        document.getElementById('step1').className = 'step completed';
-        document.getElementById('step2').className = 'step active';
-        startOTPTimer();
-      }, 2000);
+    currentResetEmail = email;
+    currentOTPToken = data.token;
+    
+    if (data.emailSent) {
+      showModalMessage('✅ Code sent! Check your email inbox', 'success');
     } else {
-      console.error('Server trouble:', data);
-      showModalMessage(data.message || 'Something went wrong sending the code', 'error');
+      showModalMessage('⚠️ Code generated but email had issues. Check the server console for your code.', 'warning');
     }
+    
+    // Move to the next step
+    setTimeout(() => {
+      document.getElementById('emailStep').style.display = 'none';
+      document.getElementById('otpStep').style.display = 'block';
+      document.getElementById('step1').className = 'step completed';
+      document.getElementById('step2').className = 'step active';
+      startOTPTimer();
+    }, 2000);
   } catch (err) {
     console.error('Network trouble:', err);
-    showModalMessage('❌ Can\'t reach the server right now', 'error');
+    showModalMessage(err.message || '❌ Something went wrong sending the code', 'error');
   } finally {
     btn.innerHTML = originalText;
     btn.disabled = false;
@@ -156,34 +130,20 @@ async function verifyOTP() {
   btn.disabled = true;
   
   try {
-    const res = await fetch('http://localhost:5000/api/auth/verify-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        email: currentResetEmail,
-        otp: otp,
-        token: currentOTPToken
-      })
-    });
+    const data = await api.auth.verifyOtp(currentResetEmail, otp, currentOTPToken);
     
-    const data = await res.json();
+    showModalMessage('OTP verified successfully!', 'success');
+    clearOTPTimer();
     
-    if (res.ok) {
-      showModalMessage('OTP verified successfully!', 'success');
-      clearOTPTimer();
-      
-      // Move to step 3
-      setTimeout(() => {
-        document.getElementById('otpStep').style.display = 'none';
-        document.getElementById('passwordStep').style.display = 'block';
-        document.getElementById('step2').className = 'step completed';
-        document.getElementById('step3').className = 'step active';
-      }, 1500);
-    } else {
-      showModalMessage(data.message || 'Invalid OTP', 'error');
-    }
+    // Move to step 3
+    setTimeout(() => {
+      document.getElementById('otpStep').style.display = 'none';
+      document.getElementById('passwordStep').style.display = 'block';
+      document.getElementById('step2').className = 'step completed';
+      document.getElementById('step3').className = 'step active';
+    }, 1500);
   } catch (err) {
-    showModalMessage('Network error. Please try again.', 'error');
+    showModalMessage(err.message || 'Invalid OTP', 'error');
   } finally {
     btn.innerHTML = originalText;
     btn.disabled = false;
@@ -198,24 +158,14 @@ async function resendOTP() {
   btn.disabled = true;
   
   try {
-    const res = await fetch('http://localhost:5000/api/auth/forgot-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: currentResetEmail })
-    });
+    const data = await api.auth.forgotPassword(currentResetEmail);
     
-    const data = await res.json();
-    
-    if (res.ok) {
-      currentOTPToken = data.token;
-      showModalMessage('New OTP sent successfully!', 'success');
-      otpCountdown = 300;
-      startOTPTimer();
-    } else {
-      showModalMessage(data.message || 'Failed to resend OTP', 'error');
-    }
+    currentOTPToken = data.token;
+    showModalMessage('New OTP sent successfully!', 'success');
+    otpCountdown = 300;
+    startOTPTimer();
   } catch (err) {
-    showModalMessage('Network error. Please try again.', 'error');
+    showModalMessage(err.message || 'Failed to resend OTP', 'error');
   } finally {
     btn.innerHTML = originalText;
     btn.disabled = false;
@@ -248,31 +198,17 @@ async function resetPassword() {
   btn.disabled = true;
   
   try {
-    const res = await fetch('http://localhost:5000/api/auth/reset-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        email: currentResetEmail,
-        newPassword: newPassword,
-        token: currentOTPToken
-      })
-    });
+    const data = await api.auth.resetPassword(currentResetEmail, newPassword, currentOTPToken);
     
-    const data = await res.json();
+    showModalMessage('Password reset successfully! You can now login with your new password.', 'success');
     
-    if (res.ok) {
-      showModalMessage('Password reset successfully! You can now login with your new password.', 'success');
-      
-      // Close modal after success
-      setTimeout(() => {
-        closeForgotPasswordModal();
-        showMessage('Password reset successful! Please login with your new password.', 'success');
-      }, 2000);
-    } else {
-      showModalMessage(data.message || 'Failed to reset password', 'error');
-    }
+    // Close modal after success
+    setTimeout(() => {
+      closeForgotPasswordModal();
+      showMessage('Password reset successful! Please login with your new password.', 'success');
+    }, 2000);
   } catch (err) {
-    showModalMessage('Network error. Please try again.', 'error');
+    showModalMessage(err.message || 'Failed to reset password', 'error');
   } finally {
     btn.innerHTML = originalText;
     btn.disabled = false;

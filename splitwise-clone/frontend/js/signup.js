@@ -39,30 +39,19 @@ document.getElementById("signupForm").addEventListener("submit", async (e) => {
     try {
         console.log('Trying to sign up:', email);
         
-        const res = await fetch("http://localhost:5000/api/auth/signup", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, password })
-        });
-
-        const data = await res.json();
+        const data = await api.auth.signup(name, email, password);
         console.log('Server response:', data);
 
-        if (res.ok) {
-            showMessage("🎉 Welcome aboard! Taking you to your dashboard...", "success");
-            localStorage.setItem("token", data.token);
-            
-            // Give them a moment to see the success message
-            setTimeout(() => {
-                window.location.href = "dashboard.html";
-            }, 1500);
-        } else {
-            console.error('Signup didn\'t work:', data);
-            showMessage("❌ " + (data.message || "Something went wrong"), "error");
-        }
+        showMessage("🎉 Welcome aboard! Taking you to your dashboard...", "success");
+        localStorage.setItem("token", data.token);
+        
+        // Give them a moment to see the success message
+        setTimeout(() => {
+            window.location.href = "dashboard.html";
+        }, 1500);
     } catch (err) {
         console.error('Network trouble:', err);
-        showMessage("❌ Can't reach the server right now", "error");
+        showMessage("❌ " + (err.message || "Can't reach the server right now"), "error");
     } finally {
         // Put the button back to normal
         btn.innerHTML = originalText;
