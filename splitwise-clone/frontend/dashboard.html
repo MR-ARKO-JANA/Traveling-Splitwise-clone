@@ -604,20 +604,29 @@ body::before {
     </div>
   </div>
 
-  <!-- Add Expense Card -->
   <div class="card fade-in">
     <h2><i class="fas fa-receipt"></i> Add Expense</h2>
     <div id="expenseForm">
       <input id="description" type="text" placeholder="What was it for?" maxlength="100">
       <input id="amount" type="number" placeholder="Amount (₹)" min="0.01" max="1000000" step="0.01">
       <select id="category">
-        <option value="other">Other</option>
-        <option value="food">Food & Dining</option>
-        <option value="transport">Transportation</option>
-        <option value="accommodation">Accommodation</option>
-        <option value="entertainment">Entertainment</option>
-        <option value="utilities">Utilities</option>
+        <option value="other">🏷️ Other</option>
+        <option value="food">🍽️ Food & Dining</option>
+        <option value="transport">🚗 Transportation</option>
+        <option value="accommodation">🏨 Accommodation</option>
+        <option value="entertainment">🎬 Entertainment</option>
+        <option value="utilities">💡 Utilities</option>
+        <option value="shopping">🛍️ Shopping</option>
+        <option value="health">💊 Health</option>
+        <option value="education">📚 Education</option>
       </select>
+      <select id="splitType">
+        <option value="equal">⚖️ Split Equally</option>
+        <option value="exact">💰 Exact Amounts</option>
+        <option value="percentage">📊 By Percentage</option>
+        <option value="shares">🔢 By Shares</option>
+      </select>
+      <textarea id="expenseNotes" placeholder="Notes (optional)" rows="2" style="resize: vertical; min-height: 50px;"></textarea>
       <div id="selectedGroupInfo" style="padding: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-bottom: 15px; display: none;">
         <small><i class="fas fa-info-circle"></i> Selected Group: <span id="selectedGroupName">None</span></small>
       </div>
@@ -669,8 +678,11 @@ body::before {
       <button onclick="window.location.href='analytics.html'" style="background: linear-gradient(135deg, #9c27b0, #e91e63);">
         <i class="fas fa-chart-line"></i> View Analytics
       </button>
-      <button id="exportDataBtn" style="background: linear-gradient(135deg, #2196f3, #21cbf3);">
-        <i class="fas fa-download"></i> Export Data
+      <button onclick="window.location.href='activity.html'" style="background: linear-gradient(135deg, #ff6f00, #ffca28);">
+        <i class="fas fa-stream"></i> Activity Timeline
+      </button>
+      <button id="exportDataBtn" onclick="api.export.downloadAllCSV()" style="background: linear-gradient(135deg, #2196f3, #21cbf3);">
+        <i class="fas fa-download"></i> Export All Data (CSV)
       </button>
       <button id="inviteFriendsBtn" style="background: linear-gradient(135deg, #ff9800, #ff5722);">
         <i class="fas fa-user-plus"></i> Invite Friends
