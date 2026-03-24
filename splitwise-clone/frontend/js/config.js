@@ -1,7 +1,9 @@
 // Configuration file for Splitwise Clone Frontend
 
-// API Base URL
-const API_BASE_URL = "http://localhost:5000";
+// API Base URL (Automatically switches between local and live production)
+const API_BASE_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+    ? "http://localhost:5000" 
+    : "";
 
 // API Endpoints
 const API_ENDPOINTS = {
