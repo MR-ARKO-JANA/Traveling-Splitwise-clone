@@ -17,35 +17,9 @@
 /* ===== BODY ===== */
 body {
     min-height: 100vh;
-    background: 
-        url('images/20cbf31ecf279ccab1a3264a2cec80c6.jpg') no-repeat center center fixed,
-        radial-gradient(circle at 20% 50%, rgba(0, 243, 255, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(255, 0, 255, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 40% 80%, rgba(0, 255, 157, 0.15) 0%, transparent 50%),
-        linear-gradient(135deg, #0a0a14 0%, #1a1a2e 50%, #16213e 100%);
-    background-size: cover, auto, auto, auto, auto;
-    animation: bgMove 12s infinite alternate;
     color: #fff;
     position: relative;
     overflow-x: hidden;
-}
-
-/* Add overlay for better readability */
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: -1;
-    pointer-events: none;
-}
-
-@keyframes bgMove {
-    0% { background-position: 0% 50%; }
-    100% { background-position: 100% 50%; }
 }
 
 /* ===== TOP BAR ===== */
@@ -699,5 +673,25 @@ body::before {
 <script src="js/authService.js"></script>
 <script src="js/dashboardService.js"></script>
 <script src="js/dashboard.js"></script>
+
+<!-- Vanta.js Background setup -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.halo.min.js"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    VANTA.HALO({
+      el: "body",
+      mouseControls: true,
+      touchControls: true,
+      gyroControls: false,
+      minHeight: 200.00,
+      minWidth: 200.00,
+      amplitudeFactor: 1.50,
+      size: 1.50,
+      baseColor: 0x667eea,
+      backgroundColor: 0x0a0a14
+    })
+  });
+</script>
 </body>
 </html>
