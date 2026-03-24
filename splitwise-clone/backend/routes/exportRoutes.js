@@ -4,6 +4,7 @@ const auth = require("../middleware/auth");
 const Expense = require("../models/Expense");
 const Group = require("../models/Group");
 const User = require("../models/User");
+const PDFDocument = require("pdfkit");
 
 // ─── GET /csv/:groupId  — Download group expenses as CSV ──────────────────────
 router.get("/csv/:groupId", auth, async (req, res) => {
@@ -88,6 +89,64 @@ router.get("/csv/user/all", auth, async (req, res) => {
         res.send(csv);
     } catch (err) {
         console.error("CSV export error:", err);
+        res.status(500).json({ message: "Server Error" });
+    }
+});
+
+// ─── GET /pdf/user/all  — Download all user expenses as PDF ───────────────────
+router.get("/pdf/user/all", auth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await User.findById(userId);
+
+        const expenses = await Expense.find({
+            $or: [{ paidBy: userId }, { splitWith: userId }]
+        })
+        .populate("paidBy", "name email")
+        .sort({ createdAt: -1 });
+
+        const doc = new PDFDocument({ margin: 50 });
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", 'attachment; filename="splitwise_statement.pdf"');
+        doc.pipe(res);
+
+        doc.fontSize(22).fillColor("#667eea").text("Splitwise Official Statement", { align: 'center' });
+        doc.moveDown();
+        doc.fontSize(12).fillColor("#000000").text(`Generated for: ${user.name} (${user.email})`);
+        doc.text(`Date of Generation: ${new Date().toLocaleDateString()}`);
+        doc.moveDown(2);
+
+        // Header
+        const tableTop = doc.y;
+        doc.font('Helvetica-Bold');
+        doc.text("Date", 50, tableTop);
+        doc.text("Description", 150, tableTop);
+        doc.text("Amount", 400, tableTop, { width: 90, align: 'right' });
+        
+        doc.moveTo(50, doc.y + 10).lineTo(500, doc.y + 10).stroke();
+        doc.moveDown();
+
+        doc.font('Helvetica');
+        let y = doc.y + 10;
+
+        expenses.forEach(exp => {
+            if (y > 700) {
+                doc.addPage();
+                y = 50;
+            }
+            const date = new Date(exp.createdAt).toLocaleDateString();
+            const sign = exp.paidBy._id.toString() === userId ? "+" : "-";
+            const color = sign === "+" ? "green" : "red";
+            
+            doc.fillColor("black").text(date, 50, y);
+            doc.text(exp.description, 150, y, { width: 240, height: 15, ellipsis: true });
+            doc.fillColor(color).text(`${sign} ₹${exp.amount}`, 400, y, { width: 90, align: 'right' });
+            y += 25;
+        });
+
+        doc.end();
+    } catch (err) {
+        console.error("PDF export error:", err);
         res.status(500).json({ message: "Server Error" });
     }
 });

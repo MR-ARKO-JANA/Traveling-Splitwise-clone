@@ -34,6 +34,7 @@ exports.createExpense = asyncHandler(async (req, res) => {
     });
 
     await expense.save();
+    if (req.app.get("io")) req.app.get("io").emit("updateData");
     res.status(201).json(expense);
 });
 
@@ -56,6 +57,7 @@ exports.deleteExpense = asyncHandler(async (req, res) => {
     }
 
     await expense.deleteOne();
+    if (req.app.get("io")) req.app.get("io").emit("updateData");
     res.json({ message: "Expense removed" });
 });
 
@@ -76,6 +78,7 @@ exports.updateExpense = asyncHandler(async (req, res) => {
     expense.category = category || expense.category;
 
     await expense.save();
+    if (req.app.get("io")) req.app.get("io").emit("updateData");
     res.json(expense);
 });
 

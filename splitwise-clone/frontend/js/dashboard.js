@@ -14,7 +14,21 @@ document.addEventListener('DOMContentLoaded', async function() {
     setupEventListeners();
     setupModals();
     loadRecentActivity();
+    setupWebSockets();
 });
+
+function setupWebSockets() {
+    if (typeof io !== 'undefined') {
+        const socket = io(API_BASE_URL, {
+            withCredentials: true
+        });
+        socket.on("connect", () => console.log("Live Sync Active"));
+        socket.on("updateData", async () => {
+            ui.showNotification("Live update received! 🔄", "info");
+            await refreshDashboard();
+        });
+    }
+}
 
 window.addEventListener('focus', function() {
     setTimeout(async () => {
@@ -437,12 +451,31 @@ async function handleSendInvite() {
     }
 }
 
-function handleExportData() {
-    const blob = new Blob([JSON.stringify({ groups: allGroups, expenses: currentExpenses, date: new Date() }, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = "splitwise-export.json";
-    a.click();
+async function handleExportData() {
+    ui.showNotification("Generating Official PDF Statement...", "info");
+    try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_BASE_URL}/api/export/pdf/user/all`, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) throw new Error("Failed to generate PDF");
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "splitwise_statement.pdf";
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        ui.showNotification("PDF Exported successfully! 📄", "success");
+    } catch (err) {
+        ui.showNotification(err.message, "error");
+    }
 }
 
 function handleSettleAll() {

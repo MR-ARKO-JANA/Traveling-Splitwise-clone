@@ -187,6 +187,7 @@ exports.settle = asyncHandler(async (req, res) => {
     });
 
     await settlement.save();
+    if (req.app.get("io")) req.app.get("io").emit("updateData");
 
     res.json({ 
         message: "Settlement recorded successfully",

@@ -3,11 +3,24 @@ const connectDB = require("./config/db");
 const cors = require("cors");
 const path = require("path");
 const cookieParser = require("cookie-parser");
+const http = require("http");
+const { Server } = require("socket.io");
 require("dotenv").config();
 
 const app = express();
 
 connectDB();
+
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: { origin: true, credentials: true }
+});
+app.set("io", io);
+
+io.on("connection", (socket) => {
+    console.log("New real-time client connected:", socket.id);
+    socket.on("disconnect", () => console.log("Real-time client disconnected:", socket.id));
+});
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
@@ -36,6 +49,6 @@ const errorHandler = require("./middleware/errorHandler");
 // Global error handling middleware
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
