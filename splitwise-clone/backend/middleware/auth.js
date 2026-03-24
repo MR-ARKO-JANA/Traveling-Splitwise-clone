@@ -3,18 +3,17 @@ const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key-change-this-in-production";
 
 module.exports = function (req, res, next) {
-    const authHeader = req.header("Authorization");
-
-    if (!authHeader) {
-        return res.status(401).json({ message: "No token, authorization denied" });
-    }
-
-    const token = authHeader.startsWith("Bearer ")
-        ? authHeader.split(" ")[1]
-        : null;
+    let token = req.cookies?.token;
 
     if (!token) {
-        return res.status(401).json({ message: "Invalid token format" });
+        const authHeader = req.header("Authorization");
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+            token = authHeader.split(" ")[1];
+        }
+    }
+
+    if (!token) {
+        return res.status(401).json({ message: "No token, authorization denied" });
     }
 
     try {

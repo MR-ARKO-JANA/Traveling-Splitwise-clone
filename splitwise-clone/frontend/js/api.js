@@ -7,7 +7,8 @@ const api = {
             const res = await fetch(API_ENDPOINTS.auth.login, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ email, password }),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         },
@@ -15,7 +16,8 @@ const api = {
             const res = await fetch(API_ENDPOINTS.auth.signup, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, email, password })
+                body: JSON.stringify({ name, email, password }),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         },
@@ -23,7 +25,8 @@ const api = {
             const res = await fetch(API_ENDPOINTS.auth.forgotPassword, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email })
+                body: JSON.stringify({ email }),
+                credentials: 'include'
             });
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({ message: "Unknown error" }));
@@ -35,7 +38,8 @@ const api = {
             const res = await fetch(API_ENDPOINTS.auth.verifyOtp, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, otp, token })
+                body: JSON.stringify({ email, otp, token }),
+                credentials: 'include'
             });
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({ message: "Unknown error" }));
@@ -47,7 +51,8 @@ const api = {
             const res = await fetch(API_ENDPOINTS.auth.resetPassword, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, newPassword, token })
+                body: JSON.stringify({ email, newPassword, token }),
+                credentials: 'include'
             });
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({ message: "Unknown error" }));
@@ -59,7 +64,8 @@ const api = {
     groups: {
         getAll: async () => {
             const res = await fetch(API_ENDPOINTS.groups.base, {
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         },
@@ -67,7 +73,9 @@ const api = {
             const res = await fetch(API_ENDPOINTS.groups.base, {
                 method: "POST",
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ name, description, emails })
+                credentials: 'include',
+                body: JSON.stringify({ name, description, emails }),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         },
@@ -75,14 +83,17 @@ const api = {
             const res = await fetch(API_ENDPOINTS.groups.addMember, {
                 method: "POST",
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ groupId, email })
+                credentials: 'include',
+                body: JSON.stringify({ groupId, email }),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         },
         delete: async (groupId) => {
             const res = await fetch(`${API_ENDPOINTS.groups.base}/${groupId}`, {
                 method: "DELETE",
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         }
@@ -90,7 +101,8 @@ const api = {
     expenses: {
         getByGroup: async (groupId) => {
             const res = await fetch(`${API_ENDPOINTS.expenses.base}/${groupId}`, {
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         },
@@ -99,7 +111,9 @@ const api = {
             const res = await fetch(API_ENDPOINTS.expenses.base, {
                 method: "POST",
                 headers: getAuthHeaders(),
-                body: JSON.stringify(data)
+                credentials: 'include',
+                body: JSON.stringify(data),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         },
@@ -107,26 +121,31 @@ const api = {
             const res = await fetch(`${API_ENDPOINTS.expenses.base}/${expenseId}`, {
                 method: "PUT",
                 headers: getAuthHeaders(),
-                body: JSON.stringify(data)
+                credentials: 'include',
+                body: JSON.stringify(data),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         },
         delete: async (expenseId) => {
             const res = await fetch(`${API_ENDPOINTS.expenses.base}/${expenseId}`, {
                 method: "DELETE",
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         },
         getHistory: async (page = 1, limit = 20, category = "all") => {
             let url = `${API_ENDPOINTS.expenses.base}/history/user?page=${page}&limit=${limit}`;
             if (category && category !== "all") url += `&category=${category}`;
-            const res = await fetch(url, { headers: getAuthHeaders() });
+            const res = await fetch(url, { headers: getAuthHeaders(),
+                credentials: 'include' });
             return handleApiResponse(res);
         },
         getStats: async (groupId) => {
             const res = await fetch(`${API_ENDPOINTS.expenses.base}/stats/${groupId}`, {
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         }
@@ -134,19 +153,22 @@ const api = {
     balances: {
         getSummary: async () => {
             const res = await fetch(API_ENDPOINTS.balance.summary, {
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         },
         getDetails: async () => {
             const res = await fetch(`${API_BASE_URL}/api/balance/details`, {
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         },
         simplifyDebts: async (groupId) => {
             const res = await fetch(`${API_BASE_URL}/api/balance/simplify/${groupId}`, {
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         },
@@ -154,13 +176,16 @@ const api = {
             const res = await fetch(`${API_BASE_URL}/api/balance/settle`, {
                 method: "POST",
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ withUserId, amount })
+                credentials: 'include',
+                body: JSON.stringify({ withUserId, amount }),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         },
         getSettlements: async () => {
             const res = await fetch(`${API_BASE_URL}/api/balance/settlements`, {
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         }
@@ -168,13 +193,15 @@ const api = {
     activity: {
         getFeed: async (page = 1, limit = 30) => {
             const res = await fetch(`${API_BASE_URL}/api/activity?page=${page}&limit=${limit}`, {
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         },
         getGroupFeed: async (groupId, page = 1, limit = 30) => {
             const res = await fetch(`${API_BASE_URL}/api/activity/group/${groupId}?page=${page}&limit=${limit}`, {
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         }
@@ -192,7 +219,8 @@ const api = {
     profile: {
         getPassport: async () => {
             const res = await fetch(`${API_BASE_URL}/api/profile/passport`, {
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                credentials: 'include'
             });
             return handleApiResponse(res);
         }

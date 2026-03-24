@@ -2,14 +2,16 @@ const express = require("express");
 const connectDB = require("./config/db"); 
 const cors = require("cors");
 const path = require("path");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
 const app = express();
 
 connectDB();
 
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use("/api/auth", require("./routes/authRoutes"));
@@ -29,14 +31,10 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
+const errorHandler = require("./middleware/errorHandler");
+
 // Global error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ 
-        message: 'Something went wrong on the server',
-        error: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
-});
+app.use(errorHandler);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

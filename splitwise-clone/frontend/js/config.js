@@ -32,16 +32,14 @@ const API_ENDPOINTS = {
 
 // Default headers for API requests
 function getAuthHeaders() {
-    const token = localStorage.getItem("token");
     return {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        "Content-Type": "application/json"
     };
 }
 
 // Utility function to check if user is authenticated
 function isAuthenticated() {
-    return !!localStorage.getItem("token");
+    return !!localStorage.getItem("user");
 }
 
 // Redirect to login if not authenticated
