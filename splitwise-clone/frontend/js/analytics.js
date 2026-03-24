@@ -51,7 +51,7 @@ async function loadAnalyticsData() {
             endDate: endDate.toISOString()
         });
         
-        const res = await fetch(`http://localhost:5000/api/expenses/history/user?${params}`, { headers });
+        const res = await fetch(`${API_BASE_URL}/api/expenses/history/user?${params}`, { headers });
         
         if (res.ok) {
             const data = await res.json();

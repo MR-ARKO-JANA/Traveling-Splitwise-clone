@@ -78,3 +78,27 @@ exports.updateExpense = asyncHandler(async (req, res) => {
     await expense.save();
     res.json(expense);
 });
+
+exports.getUserExpenseHistory = asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const { startDate, endDate } = req.query;
+
+    const query = {
+        $or: [{ paidBy: userId }, { splitWith: userId }]
+    };
+
+    if (startDate && endDate) {
+        query.createdAt = {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate)
+        };
+    }
+
+    const expenses = await Expense.find(query)
+        .populate("paidBy", "name email")
+        .populate("splitWith", "name email")
+        .populate("group", "name")
+        .sort({ createdAt: -1 });
+
+    res.json({ expenses });
+});
