@@ -4,14 +4,33 @@ const asyncHandler = require("../utils/asyncHandler");
 
 exports.getGroups = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user.id);
-    // Find groups where the user is a member (by email) or the creator
-    const groups = await Group.find({
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const query = {
         $or: [
             { members: user.email },
             { createdBy: req.user.id }
         ]
-    }).sort({ createdAt: -1 });
-    res.json(groups);
+    };
+
+    const [groups, total] = await Promise.all([
+        Group.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit)),
+        Group.countDocuments(query)
+    ]);
+
+    res.json({
+        data: groups,
+        pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total,
+            totalPages: Math.ceil(total / parseInt(limit))
+        }
+    });
 });
 
 exports.createGroup = asyncHandler(async (req, res) => {

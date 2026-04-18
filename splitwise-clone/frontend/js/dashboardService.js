@@ -8,11 +8,15 @@ const dashboardService = {
     },
 
     async getGroups() {
-        return apiClient.get('/api/groups');
+        const response = await apiClient.get('/api/groups');
+        // Handle both paginated and legacy response formats
+        return response?.data || response || [];
     },
 
     async getGroupExpenses(groupId) {
-        return apiClient.get(`/api/expenses/${groupId}`);
+        const response = await apiClient.get(`/api/expenses/${groupId}`);
+        // Handle both paginated and legacy response formats
+        return response?.data || response || [];
     },
 
     async getBalanceSummary() {

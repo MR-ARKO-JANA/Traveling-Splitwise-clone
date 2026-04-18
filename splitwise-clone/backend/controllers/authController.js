@@ -1,11 +1,11 @@
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const User = require("../models/User");
 const nodemailer = require("nodemailer");
 const asyncHandler = require("../utils/asyncHandler");
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key-change-this-in-production";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const sendOTPEmail = async (email, otp, userName = "User") => {
     try {

@@ -39,11 +39,30 @@ exports.createExpense = asyncHandler(async (req, res) => {
 });
 
 exports.getGroupExpenses = asyncHandler(async (req, res) => {
-    const expenses = await Expense.find({ group: req.params.groupId })
-        .populate("paidBy", "name email")
-        .populate("splitWith", "name email")
-        .sort({ createdAt: -1 });
-    res.json(expenses);
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const query = { group: req.params.groupId };
+
+    const [expenses, total] = await Promise.all([
+        Expense.find(query)
+            .populate("paidBy", "name email")
+            .populate("splitWith", "name email")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit)),
+        Expense.countDocuments(query)
+    ]);
+
+    res.json({
+        data: expenses,
+        pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total,
+            totalPages: Math.ceil(total / parseInt(limit))
+        }
+    });
 });
 
 exports.deleteExpense = asyncHandler(async (req, res) => {
@@ -84,7 +103,8 @@ exports.updateExpense = asyncHandler(async (req, res) => {
 
 exports.getUserExpenseHistory = asyncHandler(async (req, res) => {
     const userId = req.user.id;
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, page = 1, limit = 20 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const query = {
         $or: [{ paidBy: userId }, { splitWith: userId }]
@@ -97,11 +117,24 @@ exports.getUserExpenseHistory = asyncHandler(async (req, res) => {
         };
     }
 
-    const expenses = await Expense.find(query)
-        .populate("paidBy", "name email")
-        .populate("splitWith", "name email")
-        .populate("group", "name")
-        .sort({ createdAt: -1 });
+    const [expenses, total] = await Promise.all([
+        Expense.find(query)
+            .populate("paidBy", "name email")
+            .populate("splitWith", "name email")
+            .populate("group", "name")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit)),
+        Expense.countDocuments(query)
+    ]);
 
-    res.json({ expenses });
+    res.json({
+        data: expenses,
+        pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total,
+            totalPages: Math.ceil(total / parseInt(limit))
+        }
+    });
 });

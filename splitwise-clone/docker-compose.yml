@@ -1,0 +1,40 @@
+services:
+  app:
+    build: .
+    container_name: splitwise-clone-app
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - DB_URI=mongodb://mongo:27017/splitwise-clone
+      - JWT_SECRET=${JWT_SECRET:-change-this-to-a-strong-random-secret-in-production}
+      - MAIL_USER=${MAIL_USER:-}
+      - MAIL_PASS=${MAIL_PASS:-}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - app-uploads:/app/backend/uploads
+
+  mongo:
+    image: mongo:7
+    container_name: splitwise-clone-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
+    driver: local
+  app-uploads:
+    driver: local

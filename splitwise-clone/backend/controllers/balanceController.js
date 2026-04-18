@@ -203,13 +203,31 @@ exports.settle = asyncHandler(async (req, res) => {
 
 exports.getSettlements = asyncHandler(async (req, res) => {
     const userId = req.user.id;
-    const settlements = await Settlement.find({
-        $or: [{ from: userId }, { to: userId }]
-    })
-    .populate('from', 'name email')
-    .populate('to', 'name email')
-    .sort({ settledAt: -1 })
-    .limit(50);
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    res.json(settlements);
+    const query = {
+        $or: [{ from: userId }, { to: userId }]
+    };
+
+    const [settlements, total] = await Promise.all([
+        Settlement.find(query)
+            .populate('from', 'name email')
+            .populate('to', 'name email')
+            .sort({ settledAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit)),
+        Settlement.countDocuments(query)
+    ]);
+
+    res.json({
+        data: settlements,
+        pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total,
+            totalPages: Math.ceil(total / parseInt(limit))
+        }
+    });
 });
+

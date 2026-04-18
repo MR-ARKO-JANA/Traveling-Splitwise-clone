@@ -6,10 +6,26 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev": "nodemon backend/server.js",
-    "test": "jest"
+    "test": "jest --forceExit --detectOpenHandles",
+    "test:coverage": "jest --forceExit --detectOpenHandles --coverage",
+    "test:watch": "jest --watch"
   },
-  "keywords": [],
-  "author": "",
+  "jest": {
+    "testEnvironment": "node",
+    "testTimeout": 30000,
+    "roots": ["<rootDir>/backend/tests"],
+    "moduleNameMapper": {
+      "^bcrypt$": "bcryptjs"
+    },
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "backend/**/*.js",
+      "!backend/tests/**",
+      "!backend/node_modules/**"
+    ]
+  },
+  "keywords": ["splitwise", "expense-tracker", "bill-splitting", "nodejs", "mongodb"],
+  "author": "Arko Jana",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
@@ -18,13 +34,19 @@
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.3.2",
+    "helmet": "^8.1.0",
     "joi": "^18.0.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.3.0",
-    "multer": "^2.1.1"
+    "morgan": "^1.10.1",
+    "multer": "^2.1.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "jest": "^30.3.0",
+    "mongodb-memory-server": "^11.0.1",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2"
   }
