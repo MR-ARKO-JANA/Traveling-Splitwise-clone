@@ -1,9 +1,9 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const auth = require("../middleware/auth");
-const groupController = require("../controllers/groupController");
-const validate = require("../middleware/validate");
-const schemas = require("../validations/groupValidation");
+const auth = require('../middleware/auth');
+const groupController = require('../controllers/groupController');
+const validate = require('../middleware/validate');
+const schemas = require('../validations/groupValidation');
 
 /**
  * @swagger
@@ -40,7 +40,7 @@ const schemas = require("../validations/groupValidation");
  *       401:
  *         description: Not authenticated
  */
-router.get("/", auth, groupController.getGroups);
+router.get('/', auth, groupController.getGroups);
 
 /**
  * @swagger
@@ -76,7 +76,7 @@ router.get("/", auth, groupController.getGroups);
  *       400:
  *         description: Validation error
  */
-router.post("/", auth, validate(schemas.createGroup), groupController.createGroup);
+router.post('/', auth, validate(schemas.createGroup), groupController.createGroup);
 
 /**
  * @swagger
@@ -108,7 +108,7 @@ router.post("/", auth, validate(schemas.createGroup), groupController.createGrou
  *       404:
  *         description: Group not found
  */
-router.post("/add-member", auth, validate(schemas.addMember), groupController.addMember);
+router.post('/add-member', auth, validate(schemas.addMember), groupController.addMember);
 
 /**
  * @swagger
@@ -133,6 +133,6 @@ router.post("/add-member", auth, validate(schemas.addMember), groupController.ad
  *       404:
  *         description: Group not found
  */
-router.delete("/:id", auth, groupController.deleteGroup);
+router.delete('/:id', auth, groupController.deleteGroup);
 
 module.exports = router;
