@@ -8,12 +8,17 @@
     "dev": "nodemon backend/server.js",
     "test": "jest --forceExit --detectOpenHandles",
     "test:coverage": "jest --forceExit --detectOpenHandles --coverage",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "benchmark": "node scripts/benchmark.js",
+    "lint": "npx prettier --check .",
+    "format": "npx prettier --write ."
   },
   "jest": {
     "testEnvironment": "node",
     "testTimeout": 30000,
-    "roots": ["<rootDir>/backend/tests"],
+    "roots": [
+      "<rootDir>/backend/tests"
+    ],
     "moduleNameMapper": {
       "^bcrypt$": "bcryptjs"
     },
@@ -24,7 +29,13 @@
       "!backend/node_modules/**"
     ]
   },
-  "keywords": ["splitwise", "expense-tracker", "bill-splitting", "nodejs", "mongodb"],
+  "keywords": [
+    "splitwise",
+    "expense-tracker",
+    "bill-splitting",
+    "nodejs",
+    "mongodb"
+  ],
   "author": "Arko Jana",
   "license": "ISC",
   "type": "commonjs",
