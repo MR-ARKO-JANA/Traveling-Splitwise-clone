@@ -8,7 +8,7 @@ const connectDB = async () => {
     logger.info('MongoDB Connected');
   } catch (err) {
     logger.error('Database connection error', err);
-    process.exit(1);
+    logger.warn('Continuing execution. Mongoose will attempt to reconnect automatically.');
   }
 };
 
