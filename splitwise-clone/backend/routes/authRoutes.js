@@ -1,9 +1,9 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const authController = require("../controllers/authController");
-const validate = require("../middleware/validate");
-const schemas = require("../validations/authValidation");
-const { passwordResetLimiter } = require("../middleware/rateLimiter");
+const authController = require('../controllers/authController');
+const validate = require('../middleware/validate');
+const schemas = require('../validations/authValidation');
+const { passwordResetLimiter } = require('../middleware/rateLimiter');
 
 /**
  * @swagger
@@ -22,7 +22,7 @@ const { passwordResetLimiter } = require("../middleware/rateLimiter");
  *       200:
  *         description: Auth routes working
  */
-router.get("/test", authController.test);
+router.get('/test', authController.test);
 
 /**
  * @swagger
@@ -54,7 +54,7 @@ router.get("/test", authController.test);
  *       400:
  *         description: User already exists or validation error
  */
-router.post("/signup", validate(schemas.signup), authController.signup);
+router.post('/signup', validate(schemas.signup), authController.signup);
 
 /**
  * @swagger
@@ -81,7 +81,7 @@ router.post("/signup", validate(schemas.signup), authController.signup);
  *       400:
  *         description: Invalid credentials
  */
-router.post("/login", validate(schemas.login), authController.login);
+router.post('/login', validate(schemas.login), authController.login);
 
 /**
  * @swagger
@@ -104,7 +104,12 @@ router.post("/login", validate(schemas.login), authController.login);
  *       200:
  *         description: OTP sent to email
  */
-router.post("/forgot-password", passwordResetLimiter, validate(schemas.forgotPassword), authController.forgotPassword);
+router.post(
+  '/forgot-password',
+  passwordResetLimiter,
+  validate(schemas.forgotPassword),
+  authController.forgotPassword
+);
 
 /**
  * @swagger
@@ -133,7 +138,12 @@ router.post("/forgot-password", passwordResetLimiter, validate(schemas.forgotPas
  *       400:
  *         description: Invalid or expired OTP
  */
-router.post("/verify-otp", passwordResetLimiter, validate(schemas.verifyOTP), authController.verifyOTP);
+router.post(
+  '/verify-otp',
+  passwordResetLimiter,
+  validate(schemas.verifyOTP),
+  authController.verifyOTP
+);
 
 /**
  * @swagger
@@ -163,6 +173,11 @@ router.post("/verify-otp", passwordResetLimiter, validate(schemas.verifyOTP), au
  *       400:
  *         description: Invalid or expired token
  */
-router.post("/reset-password", passwordResetLimiter, validate(schemas.resetPassword), authController.resetPassword);
+router.post(
+  '/reset-password',
+  passwordResetLimiter,
+  validate(schemas.resetPassword),
+  authController.resetPassword
+);
 
 module.exports = router;

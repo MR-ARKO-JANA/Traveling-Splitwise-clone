@@ -1,223 +1,41 @@
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const crypto = require("crypto");
-const User = require("../models/User");
-const nodemailer = require("nodemailer");
-const asyncHandler = require("../utils/asyncHandler");
-
-const JWT_SECRET = process.env.JWT_SECRET;
-
-const sendOTPEmail = async (email, otp, userName = "User") => {
-    try {
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.MAIL_USER,
-                pass: process.env.MAIL_PASS
-            }
-        });
-
-        const mailOptions = {
-            from: process.env.MAIL_USER,
-            to: email,
-            subject: 'Password Reset Code',
-            html: `
-                <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
-                    <div style="background: #667eea; padding: 20px; text-align: center;">
-                        <h1 style="color: white; margin: 0;">Password Reset</h1>
-                    </div>
-                    <div style="padding: 20px; background: white;">
-                        <h2>Hi ${userName}!</h2>
-                        <p>Your verification code is:</p>
-                        <div style="background: #f8f9fa; border: 2px solid #667eea; border-radius: 8px; padding: 15px; text-align: center; margin: 15px 0;">
-                            <div style="font-size: 24px; font-weight: bold; color: #667eea;">${otp}</div>
-                            <p style="margin: 5px 0 0 0; color: #666;">Expires in 5 minutes</p>
-                        </div>
-                        <p>If you didn't request this, ignore this email.</p>
-                    </div>
-                </div>
-            `
-        };
-
-        await transporter.sendMail(mailOptions);
-        return { success: true };
-    } catch (error) {
-        console.error('Email error:', error.message);
-        return { success: false, error: error.message };
-    }
-};
+const asyncHandler = require('../utils/asyncHandler');
+const authService = require('../services/authService');
 
 exports.test = (req, res) => {
-    res.json({ message: "Auth routes working", timestamp: new Date() });
+  res.json({ message: 'Auth routes working', timestamp: new Date() });
 };
 
 exports.signup = asyncHandler(async (req, res) => {
-    const { name, email, password } = req.body;
-    
-    let user = await User.findOne({ email });
-    if (user) {
-        return res.status(400).json({ message: "User already exists" });
-    }
+  const { name, email, password } = req.body;
+  const { user, token } = await authService.registerUser(name, email, password);
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    user = new User({ 
-        name, 
-        email, 
-        password: hashedPassword 
-    });
-    
-    await user.save();
-
-    const payload = { user: { id: user.id } };
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
-    
-    res.cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 3600000
-    }).json({ 
-        success: true, 
-        user: { id: user.id, name: user.name, email: user.email, profileImage: user.profileImage }
-    });
+  res.cookie('token', token, authService.cookieOptions()).json({ success: true, user });
 });
 
 exports.login = asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
-    
-    const user = await User.findOne({ email });
-    if (!user) {
-        return res.status(400).json({ message: "Invalid credentials" });
-    }
+  const { email, password } = req.body;
+  const { token } = await authService.loginUser(email, password);
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-        return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    const payload = { user: { id: user.id } };
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
-    
-    res.cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 3600000
-    }).json({ success: true, token });
+  res.cookie('token', token, authService.cookieOptions()).json({ success: true, token });
 });
 
 exports.forgotPassword = asyncHandler(async (req, res) => {
-    const { email } = req.body;
-    if (!email) {
-        return res.status(400).json({ message: "Email is required" });
-    }
+  const { email } = req.body;
+  const { resetToken, emailSent } = await authService.sendPasswordResetOTP(email);
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
-
-    let userName = "User";
-    let user = await User.findOne({ email });
-    
-    if (user) {
-        userName = user.name;
-        user.resetOTP = otp;
-        user.resetOTPExpires = otpExpires;
-        user.resetToken = resetToken;
-        await user.save();
-    } else {
-        const tempUser = new User({
-            name: "New User",
-            email: email,
-            password: "temp_password_" + Date.now(),
-            resetOTP: otp,
-            resetOTPExpires: otpExpires,
-            resetToken: resetToken,
-            isTemporary: true
-        });
-        
-        try {
-            await tempUser.save();
-        } catch (err) {
-            console.log("Could not create temp user", err);
-        }
-    }
-
-    const emailResult = await sendOTPEmail(email, otp, userName);
-
-    res.json({ 
-        message: "OTP sent to your email",
-        token: resetToken,
-        emailSent: emailResult.success
-    });
+  res.json({ message: 'OTP sent to your email', token: resetToken, emailSent });
 });
 
 exports.verifyOTP = asyncHandler(async (req, res) => {
-    const { email, otp, token } = req.body;
-    
-    if (!email || !otp || !token) {
-        return res.status(400).json({ message: "Email, OTP, and token required" });
-    }
+  const { email, otp, token } = req.body;
+  const { isTemporary } = await authService.verifyOTP(email, otp, token);
 
-    const user = await User.findOne({ 
-        email,
-        resetToken: token,
-        resetOTPExpires: { $gt: Date.now() }
-    });
-
-    if (!user) {
-        return res.status(400).json({ message: "Invalid or expired OTP" });
-    }
-
-    if (user.resetOTP !== otp) {
-        return res.status(400).json({ message: "Incorrect OTP" });
-    }
-    
-    res.json({ 
-        message: "OTP verified successfully",
-        isTemporary: user.isTemporary || false
-    });
+  res.json({ message: 'OTP verified successfully', isTemporary });
 });
 
 exports.resetPassword = asyncHandler(async (req, res) => {
-    const { email, newPassword, token } = req.body;
-    
-    if (!email || !newPassword || !token) {
-        return res.status(400).json({ message: "All fields required" });
-    }
+  const { email, newPassword, token } = req.body;
+  await authService.resetPassword(email, newPassword, token);
 
-    if (newPassword.length < 6) {
-        return res.status(400).json({ message: "Password must be at least 6 characters" });
-    }
-
-    const user = await User.findOne({ 
-        email,
-        resetToken: token,
-        resetOTPExpires: { $gt: Date.now() }
-    });
-
-    if (!user) {
-        return res.status(400).json({ message: "Invalid or expired token" });
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    
-    if (user.isTemporary) {
-        user.name = "New User";
-        user.password = hashedPassword;
-        user.isTemporary = false;
-    } else {
-        user.password = hashedPassword;
-    }
-    
-    user.resetOTP = null;
-    user.resetOTPExpires = null;
-    user.resetToken = null;
-
-    await user.save();
-
-    res.json({ 
-        message: "Password reset successfully"
-    });
+  res.json({ message: 'Password reset successfully' });
 });
