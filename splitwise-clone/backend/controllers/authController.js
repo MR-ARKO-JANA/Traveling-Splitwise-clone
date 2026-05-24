@@ -14,9 +14,9 @@ exports.signup = asyncHandler(async (req, res) => {
 
 exports.login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  const { token } = await authService.loginUser(email, password);
+  const { user, token } = await authService.loginUser(email, password);
 
-  res.cookie('token', token, authService.cookieOptions()).json({ success: true, token });
+  res.cookie('token', token, authService.cookieOptions()).json({ success: true, token, user });
 });
 
 exports.forgotPassword = asyncHandler(async (req, res) => {

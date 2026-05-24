@@ -21,13 +21,7 @@
 /* ===== HARDWARE ACCELERATED MESH BACKGROUND ===== */
 body {
   min-height: 100vh;
-  background: linear-gradient(
-    -45deg, 
-    #0a0a14, 
-    #16162a, 
-    #1a1025, 
-    #0c1b29
-  );
+  background: linear-gradient(-45deg, #0a0a14, #16162a, #1a1025, #0c1b29);
   background-size: 400% 400%;
   animation: smoothGradient 15s ease infinite;
   position: relative;
@@ -43,9 +37,15 @@ body:hover {
 }
 
 @keyframes smoothGradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* ===== AUTH CONTAINER ===== */
@@ -67,7 +67,7 @@ body:hover {
   backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--glass-border);
   border-radius: 20px;
-  box-shadow: 
+  box-shadow:
     var(--shadow-neon),
     0 30px 60px rgba(0, 0, 0, 0.6),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -78,8 +78,13 @@ body:hover {
 }
 
 @keyframes cardFloat {
-  0%, 100% { transform: translateY(0) rotateX(0); }
-  50% { transform: translateY(-10px) rotateX(2deg); }
+  0%,
+  100% {
+    transform: translateY(0) rotateX(0);
+  }
+  50% {
+    transform: translateY(-10px) rotateX(2deg);
+  }
 }
 
 /* Neon border animation */
@@ -97,7 +102,7 @@ body:hover {
     var(--primary-neon)
   );
   background-size: 300% 300%;
-  -webkit-mask: 
+  -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -107,8 +112,12 @@ body:hover {
 }
 
 @keyframes borderFlow {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 300% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 300% 50%;
+  }
 }
 
 /* ===== HEADINGS ===== */
@@ -139,7 +148,8 @@ body:hover {
 }
 
 /* ===== FORM ===== */
-#loginForm, #signupForm {
+#loginForm,
+#signupForm {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -167,7 +177,7 @@ body:hover {
 .auth-card input:focus {
   background: rgba(255, 255, 255, 0.1);
   border-color: var(--primary-neon);
-  box-shadow: 
+  box-shadow:
     0 0 0 2px rgba(0, 243, 255, 0.2),
     inset 0 0 20px rgba(0, 243, 255, 0.1);
   transform: translateY(-2px);
@@ -189,11 +199,7 @@ body:hover {
 .auth-card button {
   width: 100%;
   padding: 18px;
-  background: linear-gradient(
-    45deg,
-    rgba(0, 243, 255, 0.2),
-    rgba(255, 0, 255, 0.2)
-  );
+  background: linear-gradient(45deg, rgba(0, 243, 255, 0.2), rgba(255, 0, 255, 0.2));
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 12px;
   color: white;
@@ -209,13 +215,9 @@ body:hover {
 
 /* Button hover effects */
 .auth-card button:hover {
-  background: linear-gradient(
-    45deg,
-    rgba(0, 243, 255, 0.4),
-    rgba(255, 0, 255, 0.4)
-  );
+  background: linear-gradient(45deg, rgba(0, 243, 255, 0.4), rgba(255, 0, 255, 0.4));
   border-color: var(--primary-neon);
-  box-shadow: 
+  box-shadow:
     0 0 25px rgba(0, 243, 255, 0.4),
     inset 0 0 15px rgba(255, 255, 255, 0.1);
   transform: translateY(-3px) scale(1.02);
@@ -230,19 +232,18 @@ body:hover {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: linear-gradient(
-    45deg,
-    transparent,
-    rgba(255, 255, 255, 0.1),
-    transparent
-  );
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
   transform: rotate(45deg);
   animation: buttonShine 3s infinite;
 }
 
 @keyframes buttonShine {
-  0% { transform: translateX(-100%) rotate(45deg); }
-  100% { transform: translateX(100%) rotate(45deg); }
+  0% {
+    transform: translateX(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) rotate(45deg);
+  }
 }
 
 /* ===== LINKS ===== */
@@ -297,8 +298,12 @@ body:hover {
 }
 
 @keyframes scanline {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
 }
 
 /* ===== RESPONSIVE ===== */
@@ -307,7 +312,7 @@ body:hover {
     padding: 30px 25px;
     margin: 20px;
   }
-  
+
   .auth-card h2 {
     font-size: 24px;
   }

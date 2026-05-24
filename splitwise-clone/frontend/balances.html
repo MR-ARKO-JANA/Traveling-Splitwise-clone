@@ -1,323 +1,344 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Splitwise - Balances</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/style.css">
-<style>
-.balance-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 30px;
-}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Splitwise - Balances</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+      .balance-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px;
+      }
 
-.balance-header {
-    text-align: center;
-    margin-bottom: 40px;
-}
+      .balance-header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
 
-.balance-header h1 {
-    font-size: 36px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 10px;
-}
+      .balance-header h1 {
+        font-size: 36px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 10px;
+      }
 
-.balance-summary-detailed {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 25px;
-    margin-bottom: 40px;
-}
+      .balance-summary-detailed {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        margin-bottom: 40px;
+      }
 
-.balance-detail-card {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 30px;
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    text-align: center;
-}
+      .balance-detail-card {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 30px;
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
+      }
 
-.balance-detail-card h3 {
-    font-size: 18px;
-    margin-bottom: 15px;
-    color: rgba(255, 255, 255, 0.9);
-}
+      .balance-detail-card h3 {
+        font-size: 18px;
+        margin-bottom: 15px;
+        color: rgba(255, 255, 255, 0.9);
+      }
 
-.balance-detail-card .amount {
-    font-size: 32px;
-    font-weight: bold;
-    margin-bottom: 10px;
-}
+      .balance-detail-card .amount {
+        font-size: 32px;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
 
-.balance-detail-card.positive .amount {
-    color: #00e676;
-}
+      .balance-detail-card.positive .amount {
+        color: #00e676;
+      }
 
-.balance-detail-card.negative .amount {
-    color: #ff5252;
-}
+      .balance-detail-card.negative .amount {
+        color: #ff5252;
+      }
 
-.balance-detail-card.neutral .amount {
-    color: #ffd54f;
-}
+      .balance-detail-card.neutral .amount {
+        color: #ffd54f;
+      }
 
-.balance-breakdown {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 30px;
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 30px;
-}
+      .balance-breakdown {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 30px;
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 30px;
+      }
 
-.balance-breakdown h2 {
-    color: #fff;
-    margin-bottom: 25px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+      .balance-breakdown h2 {
+        color: #fff;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
 
-.person-balance {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    margin-bottom: 15px;
-    border-left: 4px solid;
-}
+      .person-balance {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        margin-bottom: 15px;
+        border-left: 4px solid;
+      }
 
-.person-balance.owes-you {
-    border-left-color: #00e676;
-}
+      .person-balance.owes-you {
+        border-left-color: #00e676;
+      }
 
-.person-balance.you-owe {
-    border-left-color: #ff5252;
-}
+      .person-balance.you-owe {
+        border-left-color: #ff5252;
+      }
 
-.person-info {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
+      .person-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
 
-.person-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: bold;
-    font-size: 18px;
-}
+      .person-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+      }
 
-.person-details h4 {
-    color: #fff;
-    margin-bottom: 5px;
-}
+      .person-details h4 {
+        color: #fff;
+        margin-bottom: 5px;
+      }
 
-.person-details p {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 14px;
-}
+      .person-details p {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 14px;
+      }
 
-.balance-amount {
-    text-align: right;
-}
+      .balance-amount {
+        text-align: right;
+      }
 
-.balance-amount .amount {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
+      .balance-amount .amount {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
 
-.balance-amount.positive .amount {
-    color: #00e676;
-}
+      .balance-amount.positive .amount {
+        color: #00e676;
+      }
 
-.balance-amount.negative .amount {
-    color: #ff5252;
-}
+      .balance-amount.negative .amount {
+        color: #ff5252;
+      }
 
-.settle-btn {
-    background: linear-gradient(135deg, #00e676, #43cea2);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 12px;
-    margin-top: 5px;
-}
+      .settle-btn {
+        background: linear-gradient(135deg, #00e676, #43cea2);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 12px;
+        margin-top: 5px;
+      }
 
-.settle-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 5px 15px rgba(0, 230, 118, 0.4);
-}
+      .settle-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 5px 15px rgba(0, 230, 118, 0.4);
+      }
 
-.back-btn {
-    position: fixed;
-    top: 30px;
-    left: 30px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    padding: 12px 20px;
-    border-radius: 25px;
-    cursor: pointer;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-}
+      .back-btn {
+        position: fixed;
+        top: 30px;
+        left: 30px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 25px;
+        cursor: pointer;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+      }
 
-.back-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-}
+      .back-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+      }
 
-.expense-history {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 30px;
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
+      .expense-history {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 30px;
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
 
-.expense-history h2 {
-    color: #fff;
-    margin-bottom: 25px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+      .expense-history h2 {
+        color: #fff;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
 
-.expense-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    margin-bottom: 12px;
-}
+      .expense-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        margin-bottom: 12px;
+      }
 
-.expense-info {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
+      .expense-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
 
-.expense-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-}
+      .expense-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+      }
 
-.expense-details h4 {
-    color: #fff;
-    margin-bottom: 5px;
-}
+      .expense-details h4 {
+        color: #fff;
+        margin-bottom: 5px;
+      }
 
-.expense-details p {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 13px;
-}
+      .expense-details p {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 13px;
+      }
 
-.expense-amount {
-    text-align: right;
-    color: #fff;
-    font-weight: bold;
-}
-</style>
-</head>
-<body>
+      .expense-amount {
+        text-align: right;
+        color: #fff;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <button class="back-btn" onclick="window.history.back()">
+      <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </button>
 
-<button class="back-btn" onclick="window.history.back()">
-    <i class="fas fa-arrow-left"></i> Back to Dashboard
-</button>
-
-<div class="balance-container">
-    <div class="balance-header">
+    <div class="balance-container">
+      <div class="balance-header">
         <h1><i class="fas fa-balance-scale"></i> Your Balances</h1>
-        <p style="color: rgba(255,255,255,0.7);">Detailed breakdown of all your expenses and settlements</p>
-    </div>
+        <p style="color: rgba(255, 255, 255, 0.7)">
+          Detailed breakdown of all your expenses and settlements
+        </p>
+      </div>
 
-    <div class="balance-summary-detailed">
+      <div class="balance-summary-detailed">
         <div class="balance-detail-card positive">
-            <h3><i class="fas fa-arrow-down"></i> You are owed</h3>
-            <div class="amount" id="totalOwed">₹0.00</div>
-            <p style="color: rgba(255,255,255,0.7); font-size: 14px;">Money others owe you</p>
+          <h3><i class="fas fa-arrow-down"></i> You are owed</h3>
+          <div class="amount" id="totalOwed">₹0.00</div>
+          <p style="color: rgba(255, 255, 255, 0.7); font-size: 14px">Money others owe you</p>
         </div>
-        
-        <div class="balance-detail-card negative">
-            <h3><i class="fas fa-arrow-up"></i> You owe</h3>
-            <div class="amount" id="totalOwe">₹0.00</div>
-            <p style="color: rgba(255,255,255,0.7); font-size: 14px;">Money you owe others</p>
-        </div>
-        
-        <div class="balance-detail-card neutral">
-            <h3><i class="fas fa-calculator"></i> Net Balance</h3>
-            <div class="amount" id="netBalance">₹0.00</div>
-            <p style="color: rgba(255,255,255,0.7); font-size: 14px;">Your overall balance</p>
-        </div>
-    </div>
 
-    <div class="balance-breakdown">
+        <div class="balance-detail-card negative">
+          <h3><i class="fas fa-arrow-up"></i> You owe</h3>
+          <div class="amount" id="totalOwe">₹0.00</div>
+          <p style="color: rgba(255, 255, 255, 0.7); font-size: 14px">Money you owe others</p>
+        </div>
+
+        <div class="balance-detail-card neutral">
+          <h3><i class="fas fa-calculator"></i> Net Balance</h3>
+          <div class="amount" id="netBalance">₹0.00</div>
+          <p style="color: rgba(255, 255, 255, 0.7); font-size: 14px">Your overall balance</p>
+        </div>
+      </div>
+
+      <div class="balance-breakdown">
         <h2><i class="fas fa-users"></i> Balance with Friends</h2>
         <div id="personBalances">
-            <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 40px;">
-                <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 15px;"></i>
-                <p>Loading balance details...</p>
-            </div>
+          <div style="text-align: center; color: rgba(255, 255, 255, 0.6); padding: 40px">
+            <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 15px"></i>
+            <p>Loading balance details...</p>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <!-- Simplify Debts Section -->
-    <div class="balance-breakdown" id="simplifySection">
+      <!-- Simplify Debts Section -->
+      <div class="balance-breakdown" id="simplifySection">
         <h2><i class="fas fa-magic"></i> Simplify Debts</h2>
-        <p style="color: rgba(255,255,255,0.7); margin-bottom: 15px; font-size: 14px;">Minimize the number of payments needed to settle up within a group</p>
-        <select id="simplifyGroupSelect" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; margin-bottom: 15px; font-size: 14px;">
-            <option value="">Select a group...</option>
+        <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 15px; font-size: 14px">
+          Minimize the number of payments needed to settle up within a group
+        </p>
+        <select
+          id="simplifyGroupSelect"
+          style="
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            margin-bottom: 15px;
+            font-size: 14px;
+          "
+        >
+          <option value="">Select a group...</option>
         </select>
         <div id="simplifiedDebts">
-            <div style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">
-                <i class="fas fa-hand-holding-usd" style="font-size: 40px; margin-bottom: 10px; opacity: 0.3;"></i>
-                <p>Select a group to simplify debts</p>
-            </div>
+          <div style="text-align: center; color: rgba(255, 255, 255, 0.5); padding: 20px">
+            <i
+              class="fas fa-hand-holding-usd"
+              style="font-size: 40px; margin-bottom: 10px; opacity: 0.3"
+            ></i>
+            <p>Select a group to simplify debts</p>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <div class="expense-history">
+      <div class="expense-history">
         <h2><i class="fas fa-history"></i> Recent Transactions</h2>
         <div id="recentTransactions">
-            <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 40px;">
-                <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 15px;"></i>
-                <p>Loading transaction history...</p>
-            </div>
+          <div style="text-align: center; color: rgba(255, 255, 255, 0.6); padding: 40px">
+            <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 15px"></i>
+            <p>Loading transaction history...</p>
+          </div>
         </div>
+      </div>
     </div>
-</div<script src="js/config.js"></script>
-<script src="js/apiClient.js"></script>
-<script src="js/uiUtils.js"></script>
-<script src="js/userService.js"></script>
-<script src="js/balanceService.js"></script>
-<script src="js/balances.js"></script>
-</body>
-s"></script>
-</body>
+
+    <script src="js/config.js"></script>
+    <script src="js/apiClient.js"></script>
+    <script src="js/uiUtils.js"></script>
+    <script src="js/userService.js"></script>
+    <script src="js/balanceService.js"></script>
+    <script src="js/balances.js"></script>
+  </body>
 </html>

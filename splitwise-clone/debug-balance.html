@@ -1,147 +1,195 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Balance Debug Tool</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .section { background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; }
-        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
-        .result { background: white; padding: 15px; border-radius: 4px; margin: 10px 0; white-space: pre-wrap; font-family: monospace; }
-        .error { background: #f8d7da; color: #721c24; }
-        .success { background: #d4edda; color: #155724; }
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .section {
+        background: #f5f5f5;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      .result {
+        background: white;
+        padding: 15px;
+        border-radius: 4px;
+        margin: 10px 0;
+        white-space: pre-wrap;
+        font-family: monospace;
+      }
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+      }
+      .success {
+        background: #d4edda;
+        color: #155724;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Balance Debug Tool</h1>
-    
+
     <div class="section">
-        <h2>Step 1: Check Authentication</h2>
-        <button onclick="checkAuth()">Check Login Status</button>
-        <div id="authResult" class="result"></div>
+      <h2>Step 1: Check Authentication</h2>
+      <button onclick="checkAuth()">Check Login Status</button>
+      <div id="authResult" class="result"></div>
     </div>
-    
+
     <div class="section">
-        <h2>Step 2: Test Balance API</h2>
-        <button onclick="testBalance()">Get Balance Summary</button>
-        <div id="balanceResult" class="result"></div>
+      <h2>Step 2: Test Balance API</h2>
+      <button onclick="testBalance()">Get Balance Summary</button>
+      <div id="balanceResult" class="result"></div>
     </div>
-    
+
     <div class="section">
-        <h2>Step 3: Check Expenses</h2>
-        <button onclick="checkExpenses()">List All Expenses</button>
-        <div id="expenseResult" class="result"></div>
+      <h2>Step 3: Check Expenses</h2>
+      <button onclick="checkExpenses()">List All Expenses</button>
+      <div id="expenseResult" class="result"></div>
     </div>
-    
+
     <div class="section">
-        <h2>Step 4: Check Groups</h2>
-        <button onclick="checkGroups()">List All Groups</button>
-        <div id="groupResult" class="result"></div>
+      <h2>Step 4: Check Groups</h2>
+      <button onclick="checkGroups()">List All Groups</button>
+      <div id="groupResult" class="result"></div>
     </div>
 
     <script>
-        const token = localStorage.getItem("token");
-        const headers = {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-        };
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      };
 
-        function showResult(elementId, data, isError = false) {
-            const element = document.getElementById(elementId);
-            element.textContent = JSON.stringify(data, null, 2);
-            element.className = `result ${isError ? 'error' : 'success'}`;
+      function showResult(elementId, data, isError = false) {
+        const element = document.getElementById(elementId);
+        element.textContent = JSON.stringify(data, null, 2);
+        element.className = `result ${isError ? 'error' : 'success'}`;
+      }
+
+      async function checkAuth() {
+        try {
+          if (!token) {
+            showResult('authResult', { error: 'No token found. Please login first.' }, true);
+            return;
+          }
+
+          const res = await fetch('http://localhost:5000/api/profile/passport', { headers });
+          const data = await res.json();
+
+          if (res.ok) {
+            showResult('authResult', {
+              status: 'Authenticated',
+              user: data.user,
+              token: token.substring(0, 20) + '...',
+            });
+          } else {
+            showResult('authResult', { error: 'Authentication failed', data }, true);
+          }
+        } catch (err) {
+          showResult('authResult', { error: err.message }, true);
         }
+      }
 
-        async function checkAuth() {
-            try {
-                if (!token) {
-                    showResult('authResult', { error: 'No token found. Please login first.' }, true);
-                    return;
-                }
-                
-                const res = await fetch("http://localhost:5000/api/profile/passport", { headers });
-                const data = await res.json();
-                
-                if (res.ok) {
-                    showResult('authResult', { 
-                        status: 'Authenticated', 
-                        user: data.user,
-                        token: token.substring(0, 20) + '...'
-                    });
-                } else {
-                    showResult('authResult', { error: 'Authentication failed', data }, true);
-                }
-            } catch (err) {
-                showResult('authResult', { error: err.message }, true);
-            }
+      async function testBalance() {
+        try {
+          const res = await fetch('http://localhost:5000/api/balance/summary', { headers });
+          const data = await res.json();
+
+          if (res.ok) {
+            showResult('balanceResult', {
+              status: 'Success',
+              balances: data,
+              explanation: {
+                get: `You will get ₹${data.get} (others owe you)`,
+                pay: `You will pay ₹${data.pay} (you owe others)`,
+                total: `Net balance: ₹${data.total}`,
+              },
+            });
+          } else {
+            showResult(
+              'balanceResult',
+              { error: 'Balance API failed', status: res.status, data },
+              true
+            );
+          }
+        } catch (err) {
+          showResult('balanceResult', { error: err.message }, true);
         }
+      }
 
-        async function testBalance() {
-            try {
-                const res = await fetch("http://localhost:5000/api/balance/summary", { headers });
-                const data = await res.json();
-                
-                if (res.ok) {
-                    showResult('balanceResult', { 
-                        status: 'Success',
-                        balances: data,
-                        explanation: {
-                            get: `You will get ₹${data.get} (others owe you)`,
-                            pay: `You will pay ₹${data.pay} (you owe others)`,
-                            total: `Net balance: ₹${data.total}`
-                        }
-                    });
-                } else {
-                    showResult('balanceResult', { error: 'Balance API failed', status: res.status, data }, true);
-                }
-            } catch (err) {
-                showResult('balanceResult', { error: err.message }, true);
-            }
+      async function checkExpenses() {
+        try {
+          const res = await fetch('http://localhost:5000/api/expenses/history/user?limit=50', {
+            headers,
+          });
+          const data = await res.json();
+
+          if (res.ok) {
+            showResult('expenseResult', {
+              status: 'Success',
+              totalExpenses: data.total || 0,
+              expenses: data.expenses || [],
+              note:
+                data.expenses?.length === 0
+                  ? 'No expenses found. This is why balances are 0.'
+                  : 'Expenses found!',
+            });
+          } else {
+            showResult(
+              'expenseResult',
+              { error: 'Expense API failed', status: res.status, data },
+              true
+            );
+          }
+        } catch (err) {
+          showResult('expenseResult', { error: err.message }, true);
         }
+      }
 
-        async function checkExpenses() {
-            try {
-                const res = await fetch("http://localhost:5000/api/expenses/history/user?limit=50", { headers });
-                const data = await res.json();
-                
-                if (res.ok) {
-                    showResult('expenseResult', { 
-                        status: 'Success',
-                        totalExpenses: data.total || 0,
-                        expenses: data.expenses || [],
-                        note: data.expenses?.length === 0 ? 'No expenses found. This is why balances are 0.' : 'Expenses found!'
-                    });
-                } else {
-                    showResult('expenseResult', { error: 'Expense API failed', status: res.status, data }, true);
-                }
-            } catch (err) {
-                showResult('expenseResult', { error: err.message }, true);
-            }
+      async function checkGroups() {
+        try {
+          const res = await fetch('http://localhost:5000/api/groups', { headers });
+          const data = await res.json();
+
+          if (res.ok) {
+            showResult('groupResult', {
+              status: 'Success',
+              totalGroups: data.length,
+              groups: data,
+              note: data.length === 0 ? 'No groups found. Create a group first!' : 'Groups found!',
+            });
+          } else {
+            showResult(
+              'groupResult',
+              { error: 'Groups API failed', status: res.status, data },
+              true
+            );
+          }
+        } catch (err) {
+          showResult('groupResult', { error: err.message }, true);
         }
+      }
 
-        async function checkGroups() {
-            try {
-                const res = await fetch("http://localhost:5000/api/groups", { headers });
-                const data = await res.json();
-                
-                if (res.ok) {
-                    showResult('groupResult', { 
-                        status: 'Success',
-                        totalGroups: data.length,
-                        groups: data,
-                        note: data.length === 0 ? 'No groups found. Create a group first!' : 'Groups found!'
-                    });
-                } else {
-                    showResult('groupResult', { error: 'Groups API failed', status: res.status, data }, true);
-                }
-            } catch (err) {
-                showResult('groupResult', { error: err.message }, true);
-            }
-        }
-
-        // Auto-check auth on load
-        window.addEventListener('load', checkAuth);
+      // Auto-check auth on load
+      window.addEventListener('load', checkAuth);
     </script>
-</body>
+  </body>
 </html>

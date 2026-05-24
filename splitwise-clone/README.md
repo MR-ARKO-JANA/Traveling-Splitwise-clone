@@ -20,6 +20,7 @@ A full-stack expense sharing application built with Node.js, Express, MongoDB, a
 ## Tech Stack
 
 **Backend:**
+
 - Node.js & Express 5
 - MongoDB with Mongoose
 - JWT authentication (httpOnly cookies)
@@ -32,11 +33,13 @@ A full-stack expense sharing application built with Node.js, Express, MongoDB, a
 - Multer file uploads
 
 **Frontend:**
+
 - HTML5, CSS3 (Glassmorphism UI), JavaScript
 - Chart.js for analytics
 - Font Awesome icons
 
 **DevOps:**
+
 - Docker & Docker Compose
 - GitHub Actions CI/CD
 - Jest + Supertest (65+ automated tests)
@@ -46,12 +49,14 @@ A full-stack expense sharing application built with Node.js, Express, MongoDB, a
 ### Local Development
 
 1. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 2. **Set up environment variables**
    Create `.env` file in `backend/` folder:
+
    ```env
    DB_URI=mongodb://localhost:27017/splitwise-clone
    JWT_SECRET=your-strong-random-secret-key
@@ -61,6 +66,7 @@ A full-stack expense sharing application built with Node.js, Express, MongoDB, a
    ```
 
 3. **Start the application**
+
    ```bash
    npm run dev    # Development with auto-reload
    npm start      # Production
@@ -77,6 +83,7 @@ docker-compose up -d
 ```
 
 This starts:
+
 - **App** on port `5000`
 - **MongoDB** on port `27017`
 
@@ -86,9 +93,12 @@ This starts:
 npm test              # Run all tests
 npm run test:coverage # Run with coverage report
 npm run test:watch    # Watch mode for development
+npm run lint          # Run formatting check (Prettier)
+npm run format        # Auto-format all code
 ```
 
 **Test Coverage:**
+
 - Auth (signup, login, forgot-password, reset-password)
 - Groups (CRUD, pagination, authorization)
 - Expenses (CRUD, pagination, ownership)
@@ -96,31 +106,46 @@ npm run test:watch    # Watch mode for development
 - Middleware (auth, error handler, validation)
 - Split Logic (equal, exact, percentage, shares)
 
+## Performance Benchmarking
+
+A zero-dependency HTTP load testing script is included to measure server throughput and response latencies locally.
+
+Before running the benchmark, make sure your server is running (`npm run dev` or `npm start`).
+
+```bash
+npm run benchmark                                  # Benchmark the local health endpoint
+npm run benchmark <url> <requests> <concurrency>   # Benchmark a custom endpoint
+# Example:
+npm run benchmark http://localhost:5000/api/health 1000 50
+```
+
 ## API Documentation
 
 Interactive Swagger docs available at `/api-docs` when the server is running.
 
 ### Key Endpoints
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/api/auth/signup` | Register user | ❌ |
-| POST | `/api/auth/login` | Login | ❌ |
-| POST | `/api/auth/forgot-password` | Send OTP | ❌ |
-| GET | `/api/groups` | List groups (paginated) | ✅ |
-| POST | `/api/groups` | Create group | ✅ |
-| POST | `/api/expenses` | Add expense | ✅ |
-| GET | `/api/expenses/:groupId` | Group expenses (paginated) | ✅ |
-| GET | `/api/balance/summary` | Balance summary | ✅ |
-| GET | `/api/balance/details` | Detailed balances | ✅ |
-| POST | `/api/balance/settle` | Record settlement | ✅ |
-| GET | `/api/balance/settlements` | Settlements (paginated) | ✅ |
-| GET | `/api/export/csv/user/all` | Export CSV | ✅ |
-| GET | `/api/export/pdf/user/all` | Export PDF | ✅ |
-| GET | `/api/health` | Health check | ❌ |
+| Method | Endpoint                    | Description                | Auth |
+| ------ | --------------------------- | -------------------------- | ---- |
+| POST   | `/api/auth/signup`          | Register user              | ❌   |
+| POST   | `/api/auth/login`           | Login                      | ❌   |
+| POST   | `/api/auth/forgot-password` | Send OTP                   | ❌   |
+| GET    | `/api/groups`               | List groups (paginated)    | ✅   |
+| POST   | `/api/groups`               | Create group               | ✅   |
+| POST   | `/api/expenses`             | Add expense                | ✅   |
+| GET    | `/api/expenses/:groupId`    | Group expenses (paginated) | ✅   |
+| GET    | `/api/balance/summary`      | Balance summary            | ✅   |
+| GET    | `/api/balance/details`      | Detailed balances          | ✅   |
+| POST   | `/api/balance/settle`       | Record settlement          | ✅   |
+| GET    | `/api/balance/settlements`  | Settlements (paginated)    | ✅   |
+| GET    | `/api/export/csv/user/all`  | Export CSV                 | ✅   |
+| GET    | `/api/export/pdf/user/all`  | Export PDF                 | ✅   |
+| GET    | `/api/health`               | Health check               | ❌   |
 
-## Security Features
+## Security & Observability Features
 
+- **Dynamic CORS** — Configurable origins via the `ALLOWED_ORIGINS` environment variable in production.
+- **Structured JSON Logging** — Level-based (`info`, `warn`, `error`, `debug`), environment-aware logger. In production, logs output as structured JSON.
 - **Rate Limiting** — 3-tier: general API (100/15min), auth (20/15min), password reset (5/15min)
 - **Helmet** — Security headers (XSS protection, Content-Type sniffing, etc.)
 - **JWT** — HttpOnly cookies with secure flag in production
