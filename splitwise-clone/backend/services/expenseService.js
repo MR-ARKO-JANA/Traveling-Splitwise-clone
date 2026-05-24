@@ -2,6 +2,18 @@ const Expense = require('../models/Expense');
 const Group = require('../models/Group');
 const User = require('../models/User');
 const { logActivity } = require('./activityService');
+const cache = require('../config/redis');
+
+async function invalidateBalanceCache(userIds) {
+  if (!Array.isArray(userIds) || userIds.length === 0) return;
+  const promises = [];
+  for (const id of userIds) {
+    const idStr = id.toString();
+    promises.push(cache.del(`balances:summary:${idStr}`));
+    promises.push(cache.del(`balances:details:${idStr}`));
+  }
+  await Promise.all(promises);
+}
 
 /**
  * Create a new expense, automatically splitting across all group members.
@@ -44,6 +56,9 @@ async function createExpense(userId, { description, amount, groupId, category })
     expenseId: expense._id,
     description: `Added expense "${description}" — ₹${amount}`,
   });
+
+  // Invalidate cache for payer and participants
+  await invalidateBalanceCache(splitWith);
 
   return expense;
 }
@@ -95,12 +110,17 @@ async function deleteExpense(userId, expenseId) {
 
   const desc = expense.description;
   const groupId = expense.group;
+  const splitWith = expense.splitWith || [];
+
   await expense.deleteOne();
 
   await logActivity('expense_deleted', userId, {
     groupId,
     description: `Deleted expense "${desc}"`,
   });
+
+  // Invalidate cache for all affected members
+  await invalidateBalanceCache(splitWith);
 
   return { message: 'Expense removed' };
 }
@@ -133,6 +153,9 @@ async function updateExpense(userId, expenseId, { description, amount, category 
     expenseId: expense._id,
     description: `Updated expense "${expense.description}"`,
   });
+
+  // Invalidate cache for all affected members
+  await invalidateBalanceCache(expense.splitWith);
 
   return expense;
 }

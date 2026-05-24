@@ -2,6 +2,7 @@ const Group = require('../models/Group');
 const User = require('../models/User');
 const Expense = require('../models/Expense');
 const { logActivity } = require('./activityService');
+const cache = require('../config/redis');
 
 /**
  * Get paginated groups for a user.
@@ -84,6 +85,15 @@ async function addMember(groupId, email) {
     description: `${email} was added to "${group.name}"`,
   });
 
+  // Invalidate balance cache for new member if registered
+  if (addedUser) {
+    const addedUserStr = addedUser._id.toString();
+    await Promise.all([
+      cache.del(`balances:summary:${addedUserStr}`),
+      cache.del(`balances:details:${addedUserStr}`),
+    ]);
+  }
+
   return { message: 'Member added successfully', members: group.members };
 }
 
@@ -106,12 +116,24 @@ async function deleteGroup(userId, groupId) {
   }
 
   const groupName = group.name;
+  const membersEmails = group.members || [];
+
   await group.deleteOne();
   await Expense.deleteMany({ group: groupId });
 
   await logActivity('group_deleted', userId, {
     description: `Deleted group "${groupName}"`,
   });
+
+  // Invalidate balance cache for all members of the deleted group
+  const users = await User.find({ email: { $in: membersEmails } });
+  const promises = [];
+  for (const u of users) {
+    const uIdStr = u._id.toString();
+    promises.push(cache.del(`balances:summary:${uIdStr}`));
+    promises.push(cache.del(`balances:details:${uIdStr}`));
+  }
+  await Promise.all(promises);
 
   return { message: 'Group and its expenses removed' };
 }

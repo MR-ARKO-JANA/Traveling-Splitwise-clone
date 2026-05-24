@@ -3,12 +3,17 @@ const Expense = require('../models/Expense');
 const Settlement = require('../models/Settlement');
 const User = require('../models/User');
 const { logActivity } = require('./activityService');
+const cache = require('../config/redis');
 
 /**
  * Get balance summary (total to get, total to pay, net) using MongoDB aggregation.
  * This replaces the old in-memory forEach approach, which loaded ALL expenses into RAM.
  */
 async function getBalanceSummary(userId) {
+  const cacheKey = `balances:summary:${userId}`;
+  const cachedData = await cache.get(cacheKey);
+  if (cachedData) return cachedData;
+
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
   // ── Step 1: Expense-based balances via aggregation ──────────────────────────
@@ -120,11 +125,14 @@ async function getBalanceSummary(userId) {
     else if (bal < 0) totalToPay += Math.abs(bal);
   }
 
-  return {
+  const result = {
     get: totalToGet.toFixed(2),
     pay: totalToPay.toFixed(2),
     total: (totalToGet - totalToPay).toFixed(2),
   };
+
+  await cache.set(cacheKey, result, 300);
+  return result;
 }
 
 /**
@@ -132,6 +140,10 @@ async function getBalanceSummary(userId) {
  * Uses populate for name/email display but still leverages lean queries.
  */
 async function getBalanceDetails(userId) {
+  const cacheKey = `balances:details:${userId}`;
+  const cachedData = await cache.get(cacheKey);
+  if (cachedData) return cachedData;
+
   const [expenses, settlements] = await Promise.all([
     Expense.find({
       $or: [{ paidBy: userId }, { splitWith: userId }],
@@ -232,6 +244,7 @@ async function getBalanceDetails(userId) {
     }
   }
 
+  await cache.set(cacheKey, result, 300);
   return result;
 }
 
@@ -270,6 +283,14 @@ async function recordSettlement(userId, withUserId, amount, note) {
   await logActivity('settlement_made', userId, {
     description: `Settled ₹${amount} with ${otherUser.name}`,
   });
+
+  // Invalidate cache for both users
+  await Promise.all([
+    cache.del(`balances:summary:${userId}`),
+    cache.del(`balances:details:${userId}`),
+    cache.del(`balances:summary:${withUserId}`),
+    cache.del(`balances:details:${withUserId}`),
+  ]);
 
   return {
     message: 'Settlement recorded successfully',
