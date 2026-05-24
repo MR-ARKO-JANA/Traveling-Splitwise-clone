@@ -1,9 +1,9 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const auth = require("../middleware/auth");
-const expenseController = require("../controllers/expenseController");
-const validate = require("../middleware/validate");
-const schemas = require("../validations/expenseValidation");
+const auth = require('../middleware/auth');
+const expenseController = require('../controllers/expenseController');
+const validate = require('../middleware/validate');
+const schemas = require('../validations/expenseValidation');
 
 /**
  * @swagger
@@ -51,7 +51,7 @@ const schemas = require("../validations/expenseValidation");
  *       404:
  *         description: Group not found
  */
-router.post("/", auth, validate(schemas.createExpense), expenseController.createExpense);
+router.post('/', auth, validate(schemas.createExpense), expenseController.createExpense);
 
 /**
  * @swagger
@@ -87,7 +87,7 @@ router.post("/", auth, validate(schemas.createExpense), expenseController.create
  *       200:
  *         description: Paginated expense history
  */
-router.get("/history/user", auth, expenseController.getUserExpenseHistory);
+router.get('/history/user', auth, expenseController.getUserExpenseHistory);
 
 /**
  * @swagger
@@ -118,7 +118,7 @@ router.get("/history/user", auth, expenseController.getUserExpenseHistory);
  *       200:
  *         description: Paginated list of group expenses
  */
-router.get("/:groupId", auth, expenseController.getGroupExpenses);
+router.get('/:groupId', auth, expenseController.getGroupExpenses);
 
 /**
  * @swagger
@@ -143,7 +143,7 @@ router.get("/:groupId", auth, expenseController.getGroupExpenses);
  *       404:
  *         description: Expense not found
  */
-router.delete("/:id", auth, expenseController.deleteExpense);
+router.delete('/:id', auth, expenseController.deleteExpense);
 
 /**
  * @swagger
@@ -180,6 +180,6 @@ router.delete("/:id", auth, expenseController.deleteExpense);
  *       404:
  *         description: Expense not found
  */
-router.put("/:id", auth, validate(schemas.updateExpense), expenseController.updateExpense);
+router.put('/:id', auth, validate(schemas.updateExpense), expenseController.updateExpense);
 
 module.exports = router;
