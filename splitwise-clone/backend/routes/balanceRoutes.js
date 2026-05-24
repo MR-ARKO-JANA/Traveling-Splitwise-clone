@@ -1,7 +1,7 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const auth = require("../middleware/auth");
-const balanceController = require("../controllers/balanceController");
+const auth = require('../middleware/auth');
+const balanceController = require('../controllers/balanceController');
 
 /**
  * @swagger
@@ -37,7 +37,7 @@ const balanceController = require("../controllers/balanceController");
  *                   type: string
  *                   example: "300.00"
  */
-router.get("/summary", auth, balanceController.getSummary);
+router.get('/summary', auth, balanceController.getSummary);
 
 /**
  * @swagger
@@ -52,7 +52,7 @@ router.get("/summary", auth, balanceController.getSummary);
  *       200:
  *         description: Detailed balances with each person
  */
-router.get("/details", auth, balanceController.getDetails);
+router.get('/details', auth, balanceController.getDetails);
 
 /**
  * @swagger
@@ -88,7 +88,7 @@ router.get("/details", auth, balanceController.getDetails);
  *       404:
  *         description: User not found
  */
-router.post("/settle", auth, balanceController.settle);
+router.post('/settle', auth, balanceController.settle);
 
 /**
  * @swagger
@@ -114,6 +114,6 @@ router.post("/settle", auth, balanceController.settle);
  *       200:
  *         description: Paginated list of settlements
  */
-router.get("/settlements", auth, balanceController.getSettlements);
+router.get('/settlements', auth, balanceController.getSettlements);
 
 module.exports = router;
