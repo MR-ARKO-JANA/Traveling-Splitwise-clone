@@ -2,6 +2,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const cors = require('cors');
 const path = require('path');
@@ -35,8 +36,6 @@ if (
 }
 
 const app = express();
-
-connectDB();
 
 const server = http.createServer(app);
 const io = initializeSocket(server);
@@ -124,13 +123,15 @@ app.use(errorHandler);
 // ─── Start Server ─────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
-  logger.info(`API Docs available at http://localhost:${PORT}/api-docs`);
-});
+(async () => {
+  await connectDB();
+  server.listen(PORT, () => {
+    logger.info(`Server running on port ${PORT}`);
+    logger.info(`API Docs available at http://localhost:${PORT}/api-docs`);
+  });
+})();
 
 // ─── Graceful Shutdown ────────────────────────────────────────────────────────
-const mongoose = require('mongoose');
 
 function gracefulShutdown(signal) {
   logger.info(`${signal} received. Performing graceful shutdown...`);
