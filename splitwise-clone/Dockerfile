@@ -1,18 +1,30 @@
-FROM node:20-alpine
+# ─── Stage 1: Install dependencies ─────────────────────────────────────────────
+FROM node:22-alpine AS deps
 
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
-
-# Install production dependencies only
 RUN npm ci --only=production
+
+# ─── Stage 2: Production image ────────────────────────────────────────────────
+FROM node:22-alpine
+
+# Security: run as non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+
+# Copy dependencies from build stage
+COPY --from=deps /app/node_modules ./node_modules
 
 # Copy application code
 COPY . .
 
-# Create uploads directory
-RUN mkdir -p backend/uploads/profiles
+# Create uploads directory with correct permissions
+RUN mkdir -p backend/uploads/profiles && chown -R appuser:appgroup backend/uploads
+
+# Switch to non-root user
+USER appuser
 
 # Expose the port
 EXPOSE 5000
