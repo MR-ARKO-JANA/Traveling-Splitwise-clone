@@ -14,6 +14,9 @@ function formatError(err) {
 }
 
 function log(level, message, meta) {
+  if (process.env.NODE_ENV === 'test') {
+    return;
+  }
   if (process.env.NODE_ENV === 'production') {
     const logObj = {
       timestamp: new Date().toISOString(),
